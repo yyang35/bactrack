@@ -89,6 +89,7 @@ def compute_masks(dP, dist, bd=None, niter=None, rescale=1.0, mask_threshold=0.0
     # normalize the flow magnitude to rescaled 0-1 divergence. 
     dP_ = oc.div_rescale(dP, iscell) / rescale  
 
+    print(f"niter:{niter}")
     # do instance segmentation by the ol' Euler-integration + clustering
     p, coords, tr = follow_flows(dP_, dist, coords, niter=niter, interp=interp,
                                     use_gpu=use_gpu, device=device,
@@ -168,4 +169,187 @@ def follow_flows(dP, dist, inds, niter=None, interp=True, use_gpu=True,
 
   
     return p, inds, tr
+
+
+
+
+@njit('(float32[:,:,:,:],float32[:,:,:,:], int32[:,:], int32)', nogil=True)
+def steps3D(p, dP, inds, niter):
+    """ Run dynamics of pixels to recover masks in 3D.
+    
+    Euler integration of dynamics dP for niter steps.
+
+    Parameters
+    ----------------
+    p: float32, 4D array
+        pixel locations [axis x Lz x Ly x Lx] (start at initial meshgrid)
+    dP: float32, 4D array
+        flows [axis x Lz x Ly x Lx]
+    inds: int32, 2D array
+        non-zero pixels to run dynamics on [npixels x 3]
+    niter: int32
+        number of iterations of dynamics to run
+
+    Returns
+    ---------------
+    p: float32, 4D array
+        final locations of each pixel after dynamics
+
+    """
+    shape = p.shape[1:]
+    for t in range(niter):
+        for j in range(inds.shape[0]):
+            z = inds[j,0]
+            y = inds[j,1]
+            x = inds[j,2]
+            p0, p1, p2 = int(p[0,z,y,x]), int(p[1,z,y,x]), int(p[2,z,y,x])
+            p[0,z,y,x] = min(shape[0]-1, max(0, p[0,z,y,x] + dP[0,p0,p1,p2]))
+            p[1,z,y,x] = min(shape[1]-1, max(0, p[1,z,y,x] + dP[1,p0,p1,p2]))
+            p[2,z,y,x] = min(shape[2]-1, max(0, p[2,z,y,x] + dP[2,p0,p1,p2]))
+    return p, None
+
+
+
+@njit('(float32[:,:,:], float32[:,:,:], int32[:,:], int32, boolean, boolean)', nogil=True)
+def steps2D(p, dP, inds, niter, suppress=False, calc_trace=False):
+    """ Run dynamics of pixels to recover masks in 2D.
+    
+    Euler integration of dynamics dP for niter steps.
+
+    Parameters
+    ----------------
+    p: float32, 3D array
+        pixel locations [axis x Ly x Lx] (start at initial meshgrid)
+    dP: float32, 3D array
+        flows [axis x Ly x Lx]
+    inds: int32, 2D array
+        non-zero pixels to run dynamics on [npixels x 2]
+    niter: int32
+        number of iterations of dynamics to run
+
+    Returns
+    ---------------
+    p: float32, 3D array
+        final locations of each pixel after dynamics
+
+    """
+    shape = p.shape[1:]
+    if calc_trace:
+        Ly = shape[0]
+        Lx = shape[1]
+        tr = np.zeros((niter,2,Ly,Lx))
+    for t in range(niter):
+        for j in range(inds.shape[0]):
+            if calc_trace:
+                tr[t] = p.copy()
+            # starting coordinates
+            y = inds[j,0]
+            x = inds[j,1]
+            p0, p1 = int(p[0,y,x]), int(p[1,y,x])
+            step = dP[:,p0,p1]
+            for k in range(p.shape[0]):
+                p[k,y,x] = min(shape[k]-1, max(0, p[k,y,x] + step[k]))
+    return p, tr
+
+
+
+
+
+
+def get_masks(p, bd, dist, mask, inds, nclasses=2,cluster=False,
+              diam_threshold=12., eps=None, hdbscan=False, verbose=False):
+    """Omnipose mask recontruction algorithm.
+    
+    This function is called after dynamics are run. The final pixel coordinates are provided, 
+    and cell labels are assigned to clusters found by labeling the pixel clusters after rounding
+    the coordinates (snapping each pixel to the grid and labeling the resulting binary mask) or 
+    by using DBSCAN or HDBSCAN for sub-pixel clustering. 
+    
+    Parameters
+    -------------
+    p: float32, ND array
+        final locations of each pixel after dynamics
+    bd: float, ND array
+        boundary field
+    dist: float, ND array
+        distance field
+    mask: bool, ND array
+        binary cell mask
+    inds: int, ND array 
+        initial indices of pixels for the Euler integration [npixels x ndim]
+    nclasses: int
+        number of prediciton classes
+    cluster: bool
+        use DBSCAN clustering instead of coordinate thresholding
+    diam_threshold: float
+        mean diameter under which clustering will be turned on automatically
+    eps: float
+        internal espilon parameter for (H)DBSCAN
+    hdbscan: bool
+        use better, but much SLOWER, hdbscan clustering algorithm
+    verbose: bool
+        option to print more info to log file
+    
+    Returns
+    -------------
+    mask: int, ND array
+        label matrix
+    labels: int, list
+        all unique labels 
+    """
+    if nclasses > 1:
+        dt = np.abs(dist[mask]) #abs needed if the threshold is negative
+        d = dist_to_diam(dt,mask.ndim) 
+
+    else: #backwards compatibility, doesn't help for *clusters* of thin/small cells
+        d = diameters(mask,dist)
+    
+    if eps is None:
+        eps = 2**0.5
+
+    
+    cell_px = tuple(inds)
+    coords = np.nonzero(mask)
+    newinds = p[(Ellipsis,)+cell_px].T
+    mask = np.zeros(p.shape[1:],np.uint32)
+    
+    # the eps parameter needs to be opened as a parameter to the user
+    if verbose:
+        omnipose_logger.info('cluster: {}, SKLEARN_ENABLED: {}'.format(cluster,SKLEARN_ENABLED))
+        
+    if cluster and SKLEARN_ENABLED:
+        
+        if hdbscan and HDBSCAN_ENABLED:
+            clusterer = HDBSCAN(cluster_selection_epsilon=eps,
+                                # allow_single_cluster=True,
+                                min_samples=3)
+        else:
+            clusterer = DBSCAN(eps=eps, min_samples=5, n_jobs=-1)
+        
+        clusterer.fit(newinds)
+        labels = clusterer.labels_
+        
+
+        #### snapping outliers to nearest cluster 
+        snap = True
+        if snap:
+            nearest_neighbors = NearestNeighbors(n_neighbors=50)
+            neighbors = nearest_neighbors.fit(newinds)
+            o_inds= np.where(labels==-1)[0]
+            if len(o_inds)>1:
+                outliers = [newinds[i] for i in o_inds]
+                distances, indices = neighbors.kneighbors(outliers)
+                # indices,o_inds
+
+                ns = labels[indices]
+                # if len(ns)>0:
+                l = [n[np.where(n!=-1)[0][0] if np.any(n!=-1) else 0] for n in ns]
+                # l = [n[(np.where(n!=-1)+(0,))[0][0] ] for n in ns]
+                labels[o_inds] = l
+
+        ###
+        mask[cell_px] = labels+1 # outliers have label -1
+        
+    return mask, labels
+
 
