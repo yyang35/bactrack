@@ -13,11 +13,12 @@ import matplotlib.pyplot as plt
 
 
 def get_niter_range():
-    return [5,15]
+    """Get the Euler integration range of segementation hierarchy"""
+    return 5, 15
 
 
 def computer_hierarchy(cellprob,dP):
-
+    """Master method of computer segementation hierarchy"""
     mask_threshold  = 0 
     device = torch_CPU
 
@@ -25,25 +26,28 @@ def computer_hierarchy(cellprob,dP):
     coords = np.array(np.nonzero(iscell)).T.astype(np.int32)
     shape = np.array(dP.shape[1:]).astype(np.int32)
     cell_px = tuple(coords.T)
-    niter = get_niter_range()
+    iter_lo, iter_hi = get_niter_range()
 
-    # Normalize DP by rescale
+    #normalize DP by rescale
     dP_ = oc.div_rescale(dP, iscell) / 1.0
 
     p = np.meshgrid(np.arange(shape[0]), np.arange(shape[1]), indexing='ij')
     p = np.array(p).astype(np.float32)
     p = p[:,coords[:,0], coords[:,1]]
 
+    #convert formats for step method (especially torch.nn.functional.grid_sample )
     p_torch, dP_torch = _to_torch(p, dP_, device)
     p_norm_torch, dP_norm_torch = _normalize(p_torch, dP_torch, shape) 
 
-    for t in range(niter[1]):
+    #iteration on 
+    for t in range(iter_hi):
         current_coords = step(p_norm_torch, dP_norm_torch, shape)
         mask = make_mask(current_coords, cell_px, shape)
 
 
 def step( pt, dP, shape):
-    #calculate the position shift by following flow
+    """Single step of Euler integration of dynamics dP"""
+    #calculate the position shift by following flow, func require coordinate in [-1, 1]
     dPt = torch.nn.functional.grid_sample(dP, pt, mode = "nearest", align_corners=False)
     #add shift on original location, clamp outsider back to [-1,1]
     for k in range(len(shape)):
@@ -53,6 +57,7 @@ def step( pt, dP, shape):
 
 
 def _normalize(pt, dP, shape):
+    """Normalize grid and input to [-1,1]"""
     shape =  np.array(shape)[[1,0]].astype('float')-1
     pt_ = pt.clone()
     dP_ = dP.clone()
@@ -64,6 +69,7 @@ def _normalize(pt, dP, shape):
 
 
 def _denormalize(pt, shape):
+    """DeNormalize pt coordinates back to original size."""
     shape = np.array(shape)[[1,0]].astype('float')-1
     pt_ = pt.clone()
     pt_ = (pt_+1)*0.5
@@ -73,15 +79,16 @@ def _denormalize(pt, shape):
 
     
 def _to_torch(p,dP,device):
-    # p: (n_points, 2) to pt: (1 1 n_points 2)
+    """Convert pixcels locations and flow field to required torch format """
+    # p: (n_points, 2) to p_torch : (1 1 n_points 2)
     p_torch = torch.from_numpy(p[[1,0]].T).float().to(device).unsqueeze(0).unsqueeze(0) 
-    # (2, H, W) to (1, 2, H, W)
+    # dP: (2, H, W) to dP_torch: (1, 2, H, W)
     dP_torch = torch.from_numpy(dP[[1,0]]).float().to(device).unsqueeze(0) 
     return p_torch, dP_torch
 
 
 def make_mask(coords, cell_px, shape):
-
+    """Put result of current segementation to hierarchy"""
     dbscan = DBSCAN(eps=2**0.5, min_samples=5) 
     db= dbscan.fit(coords)
     labels = db.labels_
@@ -93,7 +100,7 @@ def make_mask(coords, cell_px, shape):
 
 
 def snap(coords, labels):
-    # snapping outliers to nearest cluster 
+    """snapping outliers to nearest cluster"""
     nearest_neighbors = NearestNeighbors(n_neighbors=50)
     neighbors = nearest_neighbors.fit(coords)
     o_inds = np.where(labels == -1)[0]
