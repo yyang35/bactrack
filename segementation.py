@@ -1,14 +1,17 @@
+from operator import itemgetter
 import numpy as np
 from skimage import filters
 import torch
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import DBSCAN
+from omnipose.utils import torch_GPU, torch_CPU, ARM
+import matplotlib.pyplot as plt
 
 import omnipose.core as oc
 import cellpose_omni.dynamics as od
 
-from omnipose.utils import torch_GPU, torch_CPU, ARM
-import matplotlib.pyplot as plt
+
+from hierarchy import Node, Hierarchy
 
 
 
@@ -20,6 +23,7 @@ def get_niter_range():
 def computer_hierarchy(cellprob,dP):
     """Master method of computer segementation hierarchy"""
     mask_threshold  = 0 
+    MIN_MASK_SIZE = 15
     device = torch_CPU
 
     iscell = filters.apply_hysteresis_threshold(cellprob, mask_threshold - 1,  mask_threshold) 
@@ -28,28 +32,38 @@ def computer_hierarchy(cellprob,dP):
     cell_px = tuple(coords.T)
     iter_lo, iter_hi = get_niter_range()
 
-    #normalize DP by rescale
+    # normalize DP by rescale
     dP_ = oc.div_rescale(dP, iscell) / 1.0
 
     p = np.meshgrid(np.arange(shape[0]), np.arange(shape[1]), indexing='ij')
     p = np.array(p).astype(np.float32)
     p = p[:,coords[:,0], coords[:,1]]
 
-    #convert formats for step method (especially torch.nn.functional.grid_sample )
+    # convert formats for step method (especially torch.nn.functional.grid_sample )
     p_torch, dP_torch = _to_torch(p, dP_, device)
     p_norm_torch, dP_norm_torch = _normalize(p_torch, dP_torch, shape) 
 
-    #iteration on 
+    hier = None 
+
+    # iteration to computer segementation hierarchy
+    # Every itereation do sub-segementation based on previous segementation
     for t in range(iter_hi):
         current_coords = step(p_norm_torch, dP_norm_torch, shape)
-        mask = make_mask(current_coords, cell_px, shape)
+        if hier is None:
+            hier = Hierarchy(Node(list(range(coords.shape[0]))))
+            hier = put_segement(current_coords, hier, MIN_MASK_SIZE)
+        else:
+            hier = put_segement(current_coords, hier)
+
+    return hier
 
 
 def step( pt, dP, shape):
     """Single step of Euler integration of dynamics dP"""
-    #calculate the position shift by following flow, func require coordinate in [-1, 1]
+    # calculate the position shift by following flow, func require coordinate in [-1, 1]
     dPt = torch.nn.functional.grid_sample(dP, pt, mode = "nearest", align_corners=False)
-    #add shift on original location, clamp outsider back to [-1,1]
+    # add shift on original location, clamp outsider back to [-1,1]
+    # pt(the normalized version coordiante) is update in func, eventhough it never be returned
     for k in range(len(shape)):
         pt[:,:,:,k] = torch.clamp(pt[:,:,:,k] + dPt[:,k,:,:], -1., 1.)
 
@@ -80,31 +94,57 @@ def _denormalize(pt, shape):
     
 def _to_torch(p,dP,device):
     """Convert pixcels locations and flow field to required torch format """
-    # p: (n_points, 2) to p_torch : (1 1 n_points 2)
+    # shape of p: (n_points, 2) to p_torch : (1 1 n_points 2)
     p_torch = torch.from_numpy(p[[1,0]].T).float().to(device).unsqueeze(0).unsqueeze(0) 
-    # dP: (2, H, W) to dP_torch: (1, 2, H, W)
+    # shape of dP: (2, H, W) to dP_torch: (1, 2, H, W)
     dP_torch = torch.from_numpy(dP[[1,0]]).float().to(device).unsqueeze(0) 
     return p_torch, dP_torch
 
 
-def make_mask(coords, cell_px, shape):
+def put_segement(coords, hier, min_mask_size = 15):
     """Put result of current segementation to hierarchy"""
-    dbscan = DBSCAN(eps=2**0.5, min_samples=5) 
-    db= dbscan.fit(coords)
-    labels = db.labels_
-    labels = snap(coords, labels)
-    mask = np.zeros(shape)
-    mask[cell_px] = labels+1
 
-    return mask 
+    # method to cluster coords: dbscan
+    EPS = 2 ** 0.5
+    MIN_SAMPLES = 5
+    dbscan = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES) 
+
+    # do subsegementation under segementation hierachy leaves 
+    leaves = hier.find_leaves()
+    for leave in leaves:
+        sub_indices = leave.value
+        sub_coods = coords[sub_indices, :]
+
+        dbscan = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES) 
+        db = dbscan.fit(sub_coods)
+        labels = db.labels_
+
+        # convert small mask to outlier
+        for l in np.unique(labels):
+            indices_with_label = np.where(labels == l)[0] 
+            if len(indices_with_label) < min_mask_size:
+                labels[indices_with_label] = -1
+
+        # snap outlier to segementation
+        labels = snap(sub_coods, labels)
+
+        if len(np.unique(labels)) > 1: 
+            # more than 1 sub-segementation detected under current segementation 
+            for l in np.unique(labels):
+                indices_with_label = np.where(labels == l)[0] 
+                leave.add_sub(Node(itemgetter(*indices_with_label)(sub_indices)))
+
+    return hier
 
 
 def snap(coords, labels):
     """snapping outliers to nearest cluster"""
-    nearest_neighbors = NearestNeighbors(n_neighbors=50)
+    n_samples = len(coords)
+    n_neighbors = min(50, n_samples - 1) 
+    nearest_neighbors = NearestNeighbors(n_neighbors=n_neighbors)
     neighbors = nearest_neighbors.fit(coords)
     o_inds = np.where(labels == -1)[0]
-    if len(o_inds) > 1:
+    if len(o_inds) > 0:
         outliers = [coords[i] for i in o_inds]
         distances, indices = neighbors.kneighbors(outliers)
         ns = labels[indices]

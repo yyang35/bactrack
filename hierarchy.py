@@ -11,6 +11,10 @@ class Node:
         sub.super = self
         self.subs.append(sub)
 
+    def is_leaf(self):
+        """Returns True if the node is a leaf, False otherwise"""
+        return len(self.subs) == 0
+    
 class Hierarchy:
     def __init__(self, root):
         self.root = root
@@ -22,6 +26,23 @@ class Hierarchy:
         rows = []
         self._to_dataframe_recursive(self.root, rows)
         return pd.DataFrame(rows, columns=['Node Index', 'Value', 'Super Index'])
+    
+
+    def find_leaves(self):
+        """Returns a list of all leaf nodes"""
+        leaves = []
+        self._find_leaves_recursive(self.root, leaves)
+        return leaves
+    
+
+    def _find_leaves_recursive(self, node, leaves):
+        """Helper method to find leaves recursively"""
+        if node.is_leaf():
+            leaves.append(node)
+        else:
+            for sub in node.subs:
+                self._find_leaves_recursive(sub, leaves)
+
 
     def _to_dataframe_recursive(self, node, rows, super_index=None):
         """Helper method to convert to DataFrame recursively"""
