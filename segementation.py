@@ -23,7 +23,6 @@ def get_niter_range():
 def computer_hierarchy(cellprob,dP):
     """Master method of computer segementation hierarchy"""
     mask_threshold  = 0 
-    MIN_MASK_SIZE = 15
     device = torch_CPU
 
     iscell = filters.apply_hysteresis_threshold(cellprob, mask_threshold - 1,  mask_threshold) 
@@ -43,19 +42,23 @@ def computer_hierarchy(cellprob,dP):
     p_torch, dP_torch = _to_torch(p, dP_, device)
     p_norm_torch, dP_norm_torch = _normalize(p_torch, dP_torch, shape) 
 
+    # first few integration steps doesn't count since it probability under-segemented
+    for t in range(iter_lo):
+        current_coords = step(p_norm_torch, dP_norm_torch, shape)
+
     hier = None 
 
     # iteration to computer segementation hierarchy
     # Every itereation do sub-segementation based on previous segementation
-    for t in range(iter_hi):
+    for t in range(iter_lo, iter_hi):
         current_coords = step(p_norm_torch, dP_norm_torch, shape)
         if hier is None:
             hier = Hierarchy(Node(list(range(coords.shape[0]))))
-            hier = put_segement(current_coords, hier, MIN_MASK_SIZE)
+            hier = put_segement(current_coords, hier, remove_small_masks = True)
         else:
             hier = put_segement(current_coords, hier)
 
-    return hier
+    return hier, coords
 
 
 def step( pt, dP, shape):
@@ -101,12 +104,13 @@ def _to_torch(p,dP,device):
     return p_torch, dP_torch
 
 
-def put_segement(coords, hier, min_mask_size = 15):
+def put_segement(coords, hier, remove_small_masks = False):
     """Put result of current segementation to hierarchy"""
 
     # method to cluster coords: dbscan
     EPS = 2 ** 0.5
     MIN_SAMPLES = 5
+    MIN_MASK_SZIE = 15
     dbscan = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES) 
 
     # do subsegementation under segementation hierachy leaves 
@@ -115,22 +119,23 @@ def put_segement(coords, hier, min_mask_size = 15):
         sub_indices = leave.value
         sub_coods = coords[sub_indices, :]
 
-        dbscan = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES) 
         db = dbscan.fit(sub_coods)
         labels = db.labels_
 
-        # convert small mask to outlier
+        # convert small mask to outlier (-1), or rejected masks (-2**63 ). 
+        alter_label = -2**63 if remove_small_masks else -1 
         for l in np.unique(labels):
             indices_with_label = np.where(labels == l)[0] 
-            if len(indices_with_label) < min_mask_size:
-                labels[indices_with_label] = -1
+            if len(indices_with_label) <  MIN_MASK_SZIE:
+                labels[indices_with_label] = alter_label
 
         # snap outlier to segementation
         labels = snap(sub_coods, labels)
 
-        if len(np.unique(labels)) > 1: 
+        valid_labels = np.unique([label for label in labels if label >= 0])
+        if len(valid_labels) > 1: 
             # more than 1 sub-segementation detected under current segementation 
-            for l in np.unique(labels):
+            for l in valid_labels:
                 indices_with_label = np.where(labels == l)[0] 
                 leave.add_sub(Node(itemgetter(*indices_with_label)(sub_indices)))
 
@@ -139,8 +144,10 @@ def put_segement(coords, hier, min_mask_size = 15):
 
 def snap(coords, labels):
     """snapping outliers to nearest cluster"""
+
     n_samples = len(coords)
     n_neighbors = min(50, n_samples - 1) 
+
     nearest_neighbors = NearestNeighbors(n_neighbors=n_neighbors)
     neighbors = nearest_neighbors.fit(coords)
     o_inds = np.where(labels == -1)[0]

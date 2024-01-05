@@ -47,7 +47,9 @@ class Hierarchy:
     def _to_dataframe_recursive(self, node, rows, super_index=None):
         """Helper method to convert to DataFrame recursively"""
         node_index = self._get_node_index(node)
-        rows.append({'Node Index': node_index, 'Value': str(node.value), 'Super Index': super_index})
+        rows.append(
+            {'Node Index': node_index, 'Value': str(node.value), 'Super Index': super_index}
+        )
         for sub in node.subs:
             self._to_dataframe_recursive(sub, rows, super_index=node_index)
 
@@ -73,5 +75,6 @@ class Hierarchy:
                 if super_node:
                     super_node.add_sub(node)
         # The root node is the one with no super
-        root_node = next(node for index, node in nodes.items() if df[df['Node Index'] == index]['Super Index'].isnull().any())
+        root_node = next(node for index, node in nodes.items() if df[df['Node Index'] == index]
+                         ['Super Index'].isnull().any())
         return Hierarchy(root_node)
