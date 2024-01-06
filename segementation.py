@@ -49,7 +49,7 @@ def computer_hierarchy(cellprob,dP):
     hier = None 
 
     # iteration to computer segementation hierarchy
-    # Every itereation do sub-segementation based on previous segementation
+    # every itereation do sub-segementation inside previous segementation
     for t in range(iter_lo, iter_hi):
         current_coords = step(p_norm_torch, dP_norm_torch, shape)
         if hier is None:
@@ -65,7 +65,7 @@ def step( pt, dP, shape):
     """Single step of Euler integration of dynamics dP"""
     # calculate the position shift by following flow, func require coordinate in [-1, 1]
     dPt = torch.nn.functional.grid_sample(dP, pt, mode = "nearest", align_corners=False)
-    # add shift on original location, clamp outsider back to [-1,1]
+    # add shiftted displacement to original location, clamp outsider back to [-1,1]
     # pt(the normalized version coordiante) is update in func, eventhough it never be returned
     for k in range(len(shape)):
         pt[:,:,:,k] = torch.clamp(pt[:,:,:,k] + dPt[:,k,:,:], -1., 1.)
@@ -105,7 +105,7 @@ def _to_torch(p,dP,device):
 
 
 def put_segement(coords, hier, remove_small_masks = False):
-    """Put result of current segementation to hierarchy"""
+    """Put current sub-segementation to the leaves of hierarchy"""
 
     # method to cluster coords: dbscan
     EPS = 2 ** 0.5

@@ -25,3 +25,6 @@
         bounds *= masks > 0
         
 """
+
+def read_im(filename):
+    

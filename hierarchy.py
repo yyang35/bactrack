@@ -27,14 +27,12 @@ class Hierarchy:
         self._to_dataframe_recursive(self.root, rows)
         return pd.DataFrame(rows, columns=['Node Index', 'Value', 'Super Index'])
     
-
     def find_leaves(self):
         """Returns a list of all leaf nodes"""
         leaves = []
         self._find_leaves_recursive(self.root, leaves)
         return leaves
     
-
     def _find_leaves_recursive(self, node, leaves):
         """Helper method to find leaves recursively"""
         if node.is_leaf():
@@ -42,7 +40,6 @@ class Hierarchy:
         else:
             for sub in node.subs:
                 self._find_leaves_recursive(sub, leaves)
-
 
     def _to_dataframe_recursive(self, node, rows, super_index=None):
         """Helper method to convert to DataFrame recursively"""
