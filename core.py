@@ -7,6 +7,7 @@ import logging
 
 core_logger = logging.getLogger(__name__)
 
+
 class ModelEnum(Enum):
     OMNIPOSE = "Omnipose"
     CELLPOSE = "Cellpose"
@@ -58,11 +59,15 @@ def process(basedir, hypermodel: ModelEnum = None, chans = [0,0], submodel = Non
     run_tracking(hier_arr)
 
 
-
-
 def run_tracking(hier_arr):
-    pass
 
+    from hierarchy import Hierarchy
+    from tracking import solve
+
+    total_num = Hierarchy.label_hierarchy_array(hier_arr)
+    solve(hier_arr, seg_num = total_num, cost_func_name = "overlap"):
+
+    pass
 
 
 def compute_masks(flow):

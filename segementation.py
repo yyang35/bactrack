@@ -96,7 +96,7 @@ def _denormalize(pt, shape):
         pt_[:,:,:,k] *= shape[k] 
     return pt_
 
-    
+
 def _to_torch(p,dP,device):
     """Convert pixcels locations and flow field to required torch format """
     # shape of p: (n_points, 2) to p_torch : (1 1 n_points 2)
