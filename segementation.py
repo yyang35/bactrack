@@ -58,7 +58,9 @@ def computer_hierarchy(cellprob,dP):
         else:
             hier = put_segement(current_coords, hier)
 
-    return hier, coords
+    hier.root.value = coords
+
+    return hier
 
 
 def step( pt, dP, shape):

@@ -1,99 +1,83 @@
-from gurobipy import Model, GRB, quicksum, GurobiError
+from enum import Enum
+import util
+import logging
+
+# To avoid any cyclic import, packages are import locally inside method. 
 
 
-def run_tracking(filename,):
+core_logger = logging.getLogger(__name__)
+
+class ModelEnum(Enum):
+    OMNIPOSE = "Omnipose"
+    CELLPOSE = "Cellpose"
 
 
-def run_segementation(filename, Model = ):
-    models.CellposeModel(gpu=use_GPU, model_type=model_name)
+def process(basedir, hypermodel: ModelEnum = None, chans = [0,0], submodel = None,):
 
+    from config import SEGEMENTATION_PARAMS
 
-def solve_ILP():
-    # Example parameters
-    T = 10  # The range of your time periods
-    H = range(5)  # A placeholder set representing some index set
-    w_alpha = 1
-    w_beta = 1
+    hypermodel = ModelEnum.OMNIPOSE if hypermodel is None else hypermodel
 
-    # Create a new model
-    m = Model("matrix_variables_example")
+    if hypermodel == ModelEnum.OMNIPOSE:
+        import omnipose
+        from cellpose_omni import io, transforms, models, core
+        from omnipose.utils import normalize99
+    elif hypermodel == ModelEnum.CELLPOSE:
+        import cellpose
+        from cellpose import io, transforms, models, core
+        from cellpose.transforms import normalize99
+    else:
+        raise Exception("No support on model {hypermodel}")
+    
+    if submodel not in models.MODEL_NAMES:
+        core_logger.info(
+            "Model {submodel} isn't in {hypermodel.value}'s model zoo. Use default model"
+        )
+        submodel = None
+    
+    use_GPU = core.use_gpu()
+    model = models.CellposeModel(gpu=use_GPU, model_type = submodel)
+    
+    imags = util.load(basedir, io)
+    params = SEGEMENTATION_PARAMS[hypermodel]
 
-    # Define the w matrix with example values
-    w = {(p, q): 0.5 * p + 0.3 * q for p in H for q in H}
+    # segementation model predict field (distance field + flow field), but does not compute mask
+    params['compute_masks'] = False
+    params['channels'] = chans
+    _, flows, _ = model.eval(imags, **params)
 
-    # Create a matrix of binary variables
-    x = {}
-    for t in range(2, T+1):  # Adjust the range of T according to your problem
-        for p in H:
-            for q in H:
-                x[p, q, t] = m.addVar(vtype=GRB.BINARY, name="x_%s_%s_%s" % (p, q, t))
+    core_logger.info("Segementation: predicting fields finish.")
 
-    # Integrate new variables
-    m.update()
+    # base on predicted field, run dynamic integration, computer segementation hierarchy
+    hier_arr = []
+    for flow in flows:
+        hier_arr.append(compute_masks(flow))
 
-    # Objective function
-    obj = quicksum(w_alpha * x[p, p, t] for p in H for t in range(2, T)) + \
-      quicksum(w_beta * x[p, p, t] for p in H for t in range(2, T)) + \
-      quicksum(w[p, q] * x[p, q, t] for p in H for q in H for t in range(2, T+1))
+    core_logger.info("Segementation hierarchy builded.")
 
-    m.setObjective(obj, GRB.MAXIMIZE)
-
-    # Constraints
-    for t in range(1, T):
-        for q in H:
-            m.addConstr(quicksum(x[p, q, t] for p in H) == 1, "constraint_%s_%s" % (q, t))
-
-    # Constraints would be added here
-
-
-    # Optimize model
-    m.optimize()
-
-    # Print solution
-    for v in m.getVars():
-        print('%s %g' % (v.varName, v.x))
-
-    print('Obj: %g' % m.objVal)
-
-
-
-
-# Example parameters (you will need to adjust these to match your problem)
-T = 10  # The range of your time periods
-H = range(5)  # A placeholder set representing some index set
-
-# Create a new model
-m = Model("matrix_variables_example")
-
-# Create a matrix of binary variables
-x = {}
-for t in range(2, T):  # Assuming your time starts at 2 as per your constraints
-    for p in H:
-        for q in H:
-            x[p, q, t] = m.addVar(vtype=GRB.BINARY, name="x_%s_%s_%s" % (p, q, t))
-
-# Integrate new variables
-m.update()
-
-# Objective function
-# Assuming w_alpha, w_beta, and w are the weights for your objective function
-# You will need to define these weights or get them from your data
-
-w = 1
+    run_tracking(hier_arr)
 
 
 
-m.setObjective(obj, GRB.MAXIMIZE)
+
+def run_tracking(hier_arr):
+    pass
 
 
 
-# Add other constraints similarly using the addConstr method
+def compute_masks(flow):
 
-# Optimize model
-m.optimize()
+    from segementation import computer_hierarchy
 
-# Print solution
-for v in m.getVars():
-    print('%s %g' % (v.varName, v.x))
+    [RGB_dP, dP, cellprob, p, bd, tr, affinity, bounds] = flow
+    dP, cellprob = dP.squeeze(), cellprob.squeeze()
+    hier = computer_hierarchy(cellprob, dP)
 
-print('Obj: %g' % m.objVal)
+    return hier
+
+
+
+
+
+
+

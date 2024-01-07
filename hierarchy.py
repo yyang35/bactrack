@@ -6,6 +6,13 @@ class Node:
         self.super = super
         self.subs = []
 
+        self.index = None # index corresponding to linking matrix
+        self.included = False # whether include in final mask
+
+        self.area = None
+        self.centriod = None
+        self.frame = None
+
     def add_sub(self, sub):
         """Adds a sub to this node"""
         sub.super = self
@@ -18,14 +25,21 @@ class Node:
 class Hierarchy:
     def __init__(self, root):
         self.root = root
-        self.index = 0
-        self.node_dict = {} 
+        self.value = None
 
-    def to_dataframe(self):
-        """Serializes the hierarchy into a DataFrame"""
-        rows = []
-        self._to_dataframe_recursive(self.root, rows)
-        return pd.DataFrame(rows, columns=['Node Index', 'Value', 'Super Index'])
+    def label_nodes(self, start_index = 0):
+        """Labels nodes in order"""
+        self.value = start_index
+        for node in self.root.subs:
+            self._label_nodes_recursive(node)
+
+    def _label_nodes_recursive(self, node):
+        """Helper method to label nodes recursively"""
+        if node:
+            node.index = self.index
+            self.value += 1
+            for sub in node.subs:
+                self._label_nodes_recursive(sub)
     
     def find_leaves(self):
         """Returns a list of all leaf nodes"""
@@ -41,37 +55,15 @@ class Hierarchy:
             for sub in node.subs:
                 self._find_leaves_recursive(sub, leaves)
 
-    def _to_dataframe_recursive(self, node, rows, super_index=None):
-        """Helper method to convert to DataFrame recursively"""
-        node_index = self._get_node_index(node)
-        rows.append(
-            {'Node Index': node_index, 'Value': str(node.value), 'Super Index': super_index}
-        )
-        for sub in node.subs:
-            self._to_dataframe_recursive(sub, rows, super_index=node_index)
-
-    def _get_node_index(self, node):
-        """Assigns a unique index to a node and stores it in node_dict"""
-        if node not in self.node_dict:
-            self.node_dict[node] = self.index
-            self.index += 1
-        return self.node_dict[node]
-
     @staticmethod
-    def from_dataframe(df):
-        """Deserializes the DataFrame back into a Hierarchy"""
-        nodes = {}
-        for _, row in df.iterrows():
-            node_index = row['Node Index']
-            node_value = row['Value']
-            node = Node(node_value)
-            nodes[node_index] = node
-            super_index = row['Super Index']
-            if pd.notnull(super_index):
-                super_node = nodes.get(super_index)
-                if super_node:
-                    super_node.add_sub(node)
-        # The root node is the one with no super
-        root_node = next(node for index, node in nodes.items() if df[df['Node Index'] == index]
-                         ['Super Index'].isnull().any())
-        return Hierarchy(root_node)
+    def label_hierarchy_array(hier_arr):
+        """Labels an array of Hierarchy instances sequentially"""
+        total_index = 0
+        for hierarchy in hier_arr:
+            hierarchy.label_nodes(start_index = total_index)
+            total_index = hierarchy.index 
+
+        # the last index didn't assign to any segementation node, and index start from 0
+        # so it's also the total number segementation node across T frame. 
+        total_num = total_index
+        return total_num
