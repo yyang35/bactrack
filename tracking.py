@@ -10,12 +10,16 @@ from cost import cost_funcs
 tracking_logger = logging.getLogger(__name__)
 
 
-def solve(hier_arr, seg_num, cost_func_name = "overlap"):
-    tracking_logger.info("start building up problem")
+def solve(hier_arr, seg_num, cost_func_name = "overlap", do_filter = False):
+    tracking_logger.info("Start building up problem")
     weights = make_weight_matrix(hier_arr, seg_num, cost_func_name = cost_func_name)
     hier_limits = hierarchy_limits(hier_arr)
-    tracking_logger.info("start solving problem")
-    nodes, edges = run_mip_solver(seg_num, weights, hier_limits)
+    mask_costs = mask_cost(hier_arr, seg_num) if do_filter else None
+    not_start,not_end = make_end_exception(hier_arr, seg_num)
+
+    tracking_logger.info("Start solving problem")
+
+    nodes, edges = run_mip_solver(hier_arr, seg_num, weights, hier_limits, not_start, not_end, mask_costs)
     return nodes, edges, weights
 
 
@@ -55,7 +59,28 @@ def make_weight_matrix(hier_arr, seg_num, T = 2, cost_func_name = "overlap"):
     return weight_matrix
 
 
-def run_mip_solver(seg_num, weights, hier_limits):
+def mask_cost(hier_arr, seg_num):
+    mask_costs = np.zeros(seg_num)
+    for hier in hier_arr:
+        for node in hier.all_nodes():
+            mask_costs[node.index] = node.cost
+
+    return mask_costs
+
+
+def make_end_exception(hier_arr, seg_num):
+    not_start = np.ones(seg_num)
+    not_end = np.ones(seg_num)
+    for node in hier_arr[0].all_nodes():
+        not_start[node.index] = 0
+    for node in hier_arr[-1].all_nodes():
+        not_end[node.index] = 0
+
+    return not_start,not_end
+
+
+
+def run_mip_solver(hier_arr, seg_num, weights, hier_limits, not_start, not_end,  mask_costs):
     model = mip.Model(sense=mip.MAXIMIZE, solver_name=mip.GUROBI)
 
     # set objective
@@ -67,11 +92,14 @@ def run_mip_solver(seg_num, weights, hier_limits):
 
     model.objective = (
         mip.xsum(divisions * config.DIVISION_COST)
-        + mip.xsum(appearances * config.APPEAR_COST)
-        + mip.xsum(disappearances * config.DISAPPEAR_COST)
+        + mip.xsum( (appearances * not_start) * config.APPEAR_COST)
+        + mip.xsum( (disappearances * not_end) * config.DISAPPEAR_COST)
         + mip.xsum(weights.data * edges)
     )
     
+    if mask_costs is not None:
+        model.objective +=  -1 *  mip.xsum(mask_costs * nodes)
+
     # set constrain 
     rows, cols = weights.nonzero() 
     for i in range(seg_num):
@@ -83,6 +111,9 @@ def run_mip_solver(seg_num, weights, hier_limits):
         model.add_constr(nodes[i] + divisions[i] == mip.xsum(edges[target_indices]) + disappearances[i])
         # check this 
         model.add_constr(nodes[i] >= divisions[i])
+
+    for node in hier_arr[0].root.subs:
+        model.add_constr(nodes[node.index] == 1)
 
     for limit in hier_limits:
         super, sub = limit

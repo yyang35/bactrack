@@ -1,6 +1,6 @@
 from operator import itemgetter
 import numpy as np
-from skimage import filters
+from skimage import filters, measure
 import torch
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import DBSCAN
@@ -59,6 +59,15 @@ def computer_hierarchy(cellprob,dP):
             hier = put_segement(current_coords, hier)
 
     hier.root.value = coords
+
+    for node in hier.all_nodes(): 
+        node.shape = cellprob.shape
+        sub_coords = coords[np.array(node.value)]
+        mask = np.zeros(cellprob.shape)
+        mask[sub_coords[:, 0], sub_coords[:, 1]] = 1
+        labeled_mask, num_features = measure.label((cellprob * mask) > 1 , connectivity=1, return_num=True)
+        node.cost = 100.0 * num_features / len(sub_coords)
+
 
     return hier
 

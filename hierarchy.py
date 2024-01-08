@@ -12,8 +12,11 @@ class Node:
         self.index = None # index corresponding to linking matrix
         self.included = False # whether include in final mask
 
+        self.shape = None
+        self.cost = None
+
         self.area = None
-        self.centriod = None
+        self.centroid = None
         self.frame = None
         self.bound = None
         self.c_set = None

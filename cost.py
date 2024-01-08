@@ -25,10 +25,10 @@ def IoU(nA:Node, nB:Node):
 
 
 def distance(nA:Node, nB:Node):
-    assert len(nA.centroid) == len(nB.centriod), "Two segementations need in same dimension"
+    assert len(nA.centroid) == len(nB.centroid), "Two segementations need in same dimension"
 
-    squared_diffs = [(A.centriod - B.centriod) ** 2 for A, B in zip(nA, nB)]
-    distance = np.sqrt(sum(squared_diffs))
+    squared_diffs = [(A - B) ** 2 for A, B in zip(nA.centroid, nB.centroid)]
+    distance = sum(squared_diffs)
     return distance
 
 
