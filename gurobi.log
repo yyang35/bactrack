@@ -1,0 +1,11 @@
+
+Gurobi 11.0.0 (mac64[arm], gurobi_cl) logging started Sun Jan  7 20:49:04 2024
+
+Set parameter LogFile to value "gurobi.log"
+
+Gurobi 11.0.0 (mac64[arm], gurobi_cl) logging started Sun Jan  7 20:49:16 2024
+
+Set parameter Username
+Set parameter LogFile to value "gurobi.log"
+Using license file /Users/sherryyang/gurobi.lic
+Academic license - for non-commercial use only - expires 2025-01-07

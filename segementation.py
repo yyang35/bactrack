@@ -135,7 +135,7 @@ def put_segement(coords, hier, remove_small_masks = False):
         labels = snap(sub_coods, labels)
 
         valid_labels = np.unique([label for label in labels if label >= 0])
-        if len(valid_labels) > 1: 
+        if len(valid_labels) > 1 or leave == hier.root: 
             # more than 1 sub-segementation detected under current segementation 
             for l in valid_labels:
                 indices_with_label = np.where(labels == l)[0] 

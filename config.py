@@ -1,4 +1,3 @@
-from core import ModelEnum
 
 #segementation dynamic related 
 MIN_MASK_SZIE = 15
@@ -21,7 +20,3 @@ SEGEMENTATION_PARAMS_CELLPOSE = {
     'compute_masks': False
 }
 
-SEGEMENTATION_PARAMS = {
-    ModelEnum.OMNIPOSE: SEGEMENTATION_PARAMS_OMNIPOSE,
-    ModelEnum.CELLPOSE: SEGEMENTATION_PARAMS_CELLPOSE
-}

@@ -1,6 +1,7 @@
 from enum import Enum
 import util
 import logging
+from config import SEGEMENTATION_PARAMS_OMNIPOSE, SEGEMENTATION_PARAMS_CELLPOSE
 
 # To avoid any cyclic import, packages are import locally inside method. 
 
@@ -12,10 +13,13 @@ class ModelEnum(Enum):
     OMNIPOSE = "Omnipose"
     CELLPOSE = "Cellpose"
 
+SEGEMENTATION_PARAMS = {
+    ModelEnum.OMNIPOSE: SEGEMENTATION_PARAMS_OMNIPOSE,
+    ModelEnum.CELLPOSE: SEGEMENTATION_PARAMS_CELLPOSE
+}
+
 
 def process(basedir, hypermodel: ModelEnum = None, chans = [0,0], submodel = None,):
-
-    from config import SEGEMENTATION_PARAMS
 
     hypermodel = ModelEnum.OMNIPOSE if hypermodel is None else hypermodel
 
@@ -56,18 +60,19 @@ def process(basedir, hypermodel: ModelEnum = None, chans = [0,0], submodel = Non
 
     core_logger.info("Segementation hierarchy builded.")
 
-    run_tracking(hier_arr)
+    total_num = run_tracking(hier_arr)
+    return hier_arr,total_num
 
 
 def run_tracking(hier_arr):
 
     from hierarchy import Hierarchy
-    from tracking import solve
-
     total_num = Hierarchy.label_hierarchy_array(hier_arr)
-    solve(hier_arr, seg_num = total_num, cost_func_name = "overlap"):
+    Hierarchy.compute_segementation_metrics(hier_arr)
 
-    pass
+    return total_num
+
+
 
 
 def compute_masks(flow):

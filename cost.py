@@ -1,10 +1,36 @@
 from hierarchy import Node
-import ModelEnum
 import numpy as np
+import time
 
 
+""" Cost function functions of tracking/linking algorithm"""
 
-""" Cost function zoo of tracking/linking algorithm"""
+def overlap(nA:Node, nB:Node):
+    if _check_overlap(nA.bound, nB.bound) is False:
+        return 0
+    
+    _check_c_set(nA)
+    _check_c_set(nB)
+
+    intersection = nA.c_set.intersection(nB.c_set)
+    num_common_pixels = len(intersection)
+
+    return num_common_pixels
+
+
+def IoU(nA:Node, nB:Node):
+    intersection = float(overlap(nA,nB))
+    union = nA.area + nB.area
+    return intersection / union
+
+
+def distance(nA:Node, nB:Node):
+    assert len(nA.centroid) == len(nB.centriod), "Two segementations need in same dimension"
+
+    squared_diffs = [(A.centriod - B.centriod) ** 2 for A, B in zip(nA, nB)]
+    distance = np.sqrt(sum(squared_diffs))
+    return distance
+
 
 cost_funcs = {
     "overlap": overlap,
@@ -13,25 +39,12 @@ cost_funcs = {
 }
 
 
-def overlap(n1:Node, n2:Node):
-    assert type(n1) == type(n2), "Two segementations need in same dimension"
-
-    if isinstance(n1, list):
-        overlap = sum((A.multiply(B)).sum() for A, B in zip(n1, n2))
-    else: 
-        overlap = (n1.multiply(n2)).sum()
-    return overlap
+def _check_overlap(box1, box2):
+    for i in range(len(box1)):
+        if box1[i][1] < box2[i][0] or box1[i][0] > box2[i][1]: return False 
+    return True  
 
 
-def IoU(n1:Node, n2:Node):
-    intersection = float(overlap(n1,n2))
-    union = n1.area + n2.area
-    return intersection / union
-
-
-def distance(n1:Node, n2:Node):
-    assert len(n1.centroid) == len(n2), "Two segementations need in same dimension"
-
-    squared_diffs = [(coord_A - coord_B) ** 2 for coord_A, coord_B in zip(n1, n2)]
-    distance = np.sqrt(sum(squared_diffs))
-    return distance
+def _check_c_set(n:Node):
+    if n.c_set is None:
+        n.c_set = {tuple(coord) for coord in n.value}
