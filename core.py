@@ -75,7 +75,7 @@ def process(
         return hier_arr,total_num, None, None
     
     n, edges = run_tracking(hier_arr, total_num, cost_func, do_filter=do_filter)
-    mask_arr, edge_df = post_process(hier_arr, n, edges)
+    mask_arr, edge_df = run_postprocess(hier_arr, n, edges)
 
     return hier_arr,total_num,  mask_arr, edge_df 
 
@@ -96,7 +96,7 @@ def run_tracking(hier_arr, seg_num, cost_func_name, do_filter):
     return n, edges
 
 
-def post_process(hier_arr, n, edges):
+def run_postprocess(hier_arr, n, edges):
     from util import format_output, store_output
     mask_arr, edge_df  = format_output(hier_arr, n, edges)
     return mask_arr, edge_df

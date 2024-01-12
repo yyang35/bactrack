@@ -1,9 +1,21 @@
 from hierarchy import Node
 import numpy as np
 import time
+import logging
+from scipy.sparse import csr_matrix
 
 
 """ Cost function functions of tracking/linking algorithm"""
+
+
+weight_logger = logging.getLogger(__name__)
+
+class overlap_weight:
+
+
+def run_cost():
+    pass
+
 
 def overlap(nA:Node, nB:Node):
     if _check_overlap(nA.bound, nB.bound) is False:

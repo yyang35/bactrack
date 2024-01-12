@@ -120,51 +120,6 @@ def _to_torch(p,dP,device):
     return p_torch, dP_torch
 
 
-"""
-def put_segement(coords, hier, remove_small_masks = False):
-    Put current sub-segementation to the leaves of hierarchy
-
-    MIN_MASK_SZIE = 15
-
-    # do subsegementation under segementation hierachy leaves 
-    leaves = hier.find_leaves()
-    for leave in leaves:
-        sub_indices = leave.value
-        sub_coords = coords[sub_indices, :]
-
-        mask = np.zeros((int(np.max(sub_coords[:, 0])) + 1, int(np.max(sub_coords[:, 1])) + 1))
-        # Convert each row of sub_coords to a tuple and set the corresponding pixels to 1
-        mask[tuple(sub_coords.T.astype(int))] = 1
-        labeled_mask, num_features = measure.label(mask , connectivity=1, return_num=True)
-
-        if num_features == 1 and leave != hier.root:
-            continue
-        
-        labels = np.array([labeled_mask[int(x)][int(y)] for x, y in sub_coords])
-
-        # convert small mask to outlier (-1), or rejected masks (-2**63 ). 
-        alter_label = -2**63 if remove_small_masks else -1 
-        for l in np.unique(labels):
-            indices_with_label = np.where(labels == l)[0] 
-            if len(indices_with_label) <  MIN_MASK_SZIE:
-                labels[indices_with_label] = alter_label
-
-        # after solve small masks, it still have more than 1 sub-segementation detected under current 
-        # segementation, or this the root segementation 
-        valid_labels = np.unique([label for label in labels if label >= 0])
-        if len(valid_labels) > 1 or leave == hier.root: 
-            
-            # snap outlier to segementation
-            labels = snap(sub_coords, labels)
-            
-            for l in valid_labels:
-                indices_with_label = np.where(labels == l)[0] 
-                leave.add_sub(Node(itemgetter(*indices_with_label)(sub_indices)))
-
-    return hier
-"""
-
-
 
 def put_segement(coords, hier, remove_small_masks = False):
     # method to cluster coords: dbscan
@@ -205,44 +160,6 @@ def put_segement(coords, hier, remove_small_masks = False):
     print(t2-t1)
 
     return hier
-
-
-
-def cluster(shape, coords):
-
-    EPS = 2 ** 0.5
-    MIN_SAMPLES = 5
-
-    cood_num = coords.shape[0]
-    labels = np.zeros(cood_num)
-    mask = -1 * np.ones(shape)
-    for c_index in range(cood_num):
-        x, y = map(int, coords[c_index])
-        if (x, y) not in mask: 
-            mask[x, y] = set()
-        mask[x, y].add(c_index)
-    
-    queue = []
-    label = 0
-    for c_index in range(cood_num):
-        if labels[c_index] == -1 : queue.append(c_index)
-        while not queue.empty():
-            x, y = map(int, coords[queue.pop()])
-            delta = int(1 + EPS)
-            neighbors = set().union(*mask[x-delta:x+delta, y-delta:y+delta].flatten())
-            close_neighbors = set()
-            for coord in neighbors:
-                if np.sqrt(( x- coord[0]) ** 2 + (y - coord[1]) ** 2) <= EPS: 
-                    close_neighbors.add(coord)
-
-            if close_neighbors > MIN_SAMPLES:
-                queue.extend(close_neighbors)
-
-            labels[c_index] = label
-
-        label += 1
-
-    return labels
 
         
 
