@@ -1,6 +1,7 @@
 from enum import Enum
 import util
 import logging
+import numpy as np
 from config import SEGEMENTATION_PARAMS_OMNIPOSE, SEGEMENTATION_PARAMS_CELLPOSE
 
 # To avoid any cyclic import, packages are import locally inside method. 
@@ -19,7 +20,15 @@ SEGEMENTATION_PARAMS = {
 }
 
 
-def process(basedir, hypermodel: ModelEnum = None, chans = [0,0], submodel = None,):
+def process(
+        basedir, 
+        hypermodel: ModelEnum = None, 
+        chans = [0,0], 
+        submodel = None, 
+        cost_func = "overlap", 
+        compute_link = True,
+        do_filter = False,
+    ):
 
     hypermodel = ModelEnum.OMNIPOSE if hypermodel is None else hypermodel
 
@@ -60,19 +69,37 @@ def process(basedir, hypermodel: ModelEnum = None, chans = [0,0], submodel = Non
 
     core_logger.info("Segementation hierarchy builded.")
 
-    total_num = run_tracking(hier_arr)
-    return hier_arr,total_num
+    total_num = mark_segementation(hier_arr, cost_func)
+
+    if not compute_link:
+        return hier_arr,total_num, None, None
+    
+    n, edges = run_tracking(hier_arr, total_num, cost_func, do_filter=do_filter)
+    mask_arr, edge_df = post_process(hier_arr, n, edges)
+
+    return hier_arr,total_num,  mask_arr, edge_df 
 
 
-def run_tracking(hier_arr):
+def mark_segementation(hier_arr, cost_func):
 
     from hierarchy import Hierarchy
     total_num = Hierarchy.label_hierarchy_array(hier_arr)
     Hierarchy.compute_segementation_metrics(hier_arr)
-
     return total_num
 
 
+def run_tracking(hier_arr, seg_num, cost_func_name, do_filter):
+    from tracking import solve
+    
+    n, e, (rows, cols) = solve(hier_arr, seg_num=seg_num, cost_func_name=cost_func_name, do_filter= do_filter)
+    edges = {(rows[i], cols[i]) for i in e}
+    return n, edges
+
+
+def post_process(hier_arr, n, edges):
+    from util import format_output, store_output
+    mask_arr, edge_df  = format_output(hier_arr, n, edges)
+    return mask_arr, edge_df
 
 
 def compute_masks(flow):

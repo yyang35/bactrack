@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from scipy.sparse import coo_matrix
 from collections import deque
+from skimage import filters, measure
+
 
 class Node:
     def __init__(self, value, super=None):
@@ -10,7 +12,7 @@ class Node:
         self.subs = []
 
         self.index = None # index corresponding to linking matrix
-        self.included = False # whether include in final mask
+        self.label = None # only picked segementation have label 
 
         self.shape = None
         self.cost = None
@@ -71,7 +73,7 @@ class Hierarchy:
             current_node = queue.popleft()
             nodes.add(current_node)
             queue.extend(current_node.subs)
-
+            
         nodes.remove(self.root)  # Remove the root node from the set
         return nodes
 
@@ -109,3 +111,14 @@ class Hierarchy:
                 node.centroid = tuple(centroid)
                 node.bound = np.vstack((np.min(sub_coords, axis=0), np.max(sub_coords, axis=0))).T
                 node.value = sub_coords
+                
+                mask  = np.zeros(node.shape)
+                mask[sub_coords[:, 0], sub_coords[:, 1]] = 1
+                labeled_mask, num_features = measure.label(mask, connectivity=1, return_num=True)
+                if num_features > 1:
+                    component_sizes = [np.sum(labeled_mask == label) for label in range(1, num_features + 1)]
+                    largest_component_label = np.argmax(component_sizes) + 1  # Add 1 to match label indices
+                    largest_component_mask = (labeled_mask == largest_component_label)
+                    largest_component_coords = np.column_stack(np.nonzero(largest_component_mask))
+                    node.value = largest_component_coords
+

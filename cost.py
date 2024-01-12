@@ -29,7 +29,7 @@ def distance(nA:Node, nB:Node):
 
     squared_diffs = [(A - B) ** 2 for A, B in zip(nA.centroid, nB.centroid)]
     distance = sum(squared_diffs)
-    return distance
+    return - 1 * distance
 
 
 cost_funcs = {

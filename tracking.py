@@ -14,13 +14,16 @@ def solve(hier_arr, seg_num, cost_func_name = "overlap", do_filter = False):
     tracking_logger.info("Start building up problem")
     weights = make_weight_matrix(hier_arr, seg_num, cost_func_name = cost_func_name)
     hier_limits = hierarchy_limits(hier_arr)
-    mask_costs = mask_cost(hier_arr, seg_num) if do_filter else None
+    mask_costs = mask_cost(hier_arr, seg_num)  if do_filter else None
     not_start,not_end = make_end_exception(hier_arr, seg_num)
 
     tracking_logger.info("Start solving problem")
 
     nodes, edges = run_mip_solver(hier_arr, seg_num, weights, hier_limits, not_start, not_end, mask_costs)
-    return nodes, edges, weights
+    n = np.asarray([i for i, node in enumerate(nodes) if node.x > 0.5], dtype=int)
+    e = np.asarray([i for i, edge in enumerate(edges) if edge.x > 0.5], dtype=int)
+
+    return n, e, weights.nonzero() 
 
 
 def hierarchy_limits(hier_arr):
@@ -29,7 +32,6 @@ def hierarchy_limits(hier_arr):
         for node in hier.all_nodes():
             for sub in node.subs:
                 limits.add((node.index, sub.index))
-
     return limits
 
     
@@ -64,7 +66,7 @@ def mask_cost(hier_arr, seg_num):
     for hier in hier_arr:
         for node in hier.all_nodes():
             mask_costs[node.index] = node.cost
-
+    print(mask_costs)
     return mask_costs
 
 
@@ -98,7 +100,7 @@ def run_mip_solver(hier_arr, seg_num, weights, hier_limits, not_start, not_end, 
     )
     
     if mask_costs is not None:
-        model.objective +=  -1 *  mip.xsum(mask_costs * nodes)
+        model.objective -= mip.xsum(mask_costs * nodes)
 
     # set constrain 
     rows, cols = weights.nonzero() 
@@ -111,9 +113,6 @@ def run_mip_solver(hier_arr, seg_num, weights, hier_limits, not_start, not_end, 
         model.add_constr(nodes[i] + divisions[i] == mip.xsum(edges[target_indices]) + disappearances[i])
         # check this 
         model.add_constr(nodes[i] >= divisions[i])
-
-    for node in hier_arr[0].root.subs:
-        model.add_constr(nodes[node.index] == 1)
 
     for limit in hier_limits:
         super, sub = limit
