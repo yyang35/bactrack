@@ -11,16 +11,17 @@ class Node:
         self.super = kwargs.get('super', None)
         self.subs = []
 
-        self.index = kwargs.get('index', None) # index corresponding to linking matrix
-        self.label = kwargs.get('label', None)  # only picked segementation have label 
-        self.next = kwargs.get('next', None) # next frame node, only picked sgementation have next
-
+        self.index = kwargs.get('index', None) # index corresponding to linking matrix 
+        
         self.shape = kwargs.get('shape', None)
-        self.cost = kwargs.get('cost', None)
+        self.uncertainty = kwargs.get('uncertainty', None)
         self.area = kwargs.get('area', None)
         self.centroid = kwargs.get('centroid', None)
         self.frame = kwargs.get('frame', None)
         self.bound = kwargs.get('bound', None)
+
+        self.label = kwargs.get('label', None)  # only picked segementation have label 
+        self.next = kwargs.get('next', None) # next frame node, only picked sgementation have next
 
  
     def add_sub(self, sub):
@@ -35,8 +36,8 @@ class Node:
     def to_dict(self):
         """Converts the Node and its hierarchy into a dictionary"""
         ROOT_PLACEHOLDER = "ROOT"
-        node_dict = {attr: getattr(self, attr, None) for attr in \
-                     ['Value', 'Index', 'Label', 'Next','Shape', 'Cost', 'Area', 'Centroid', 'Frame', 'Bound']}
+        node_dict = {attr: getattr(self, attr.lower(), None) for attr in \
+                     ['Value', 'Next','Shape', 'Cost', 'Area', 'Centroid', 'Frame', 'Bound','Index', 'Label',]}
         node_dict['Super'] = self.super.index if self.super is not None else ROOT_PLACEHOLDER
         return node_dict
 

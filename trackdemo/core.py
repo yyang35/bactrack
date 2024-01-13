@@ -66,8 +66,6 @@ def compute_hierarchy(
 
     core_logger.info("Segementation hierarchy builded.")
 
-    mark_segementation(hier_arr, cost_func)
-
     return hier_arr
 
 
@@ -90,10 +88,9 @@ def run_tracking(
 
 def mark_segementation(hier_arr, cost_func):
 
-    from .hierarchy import Hierarchy
-    total_num = Hierarchy.label_hierarchy_array(hier_arr)
-    Hierarchy.compute_segementation_metrics(hier_arr)
-    return total_num
+    from .feature import label_hierarchy_array, compute_segementation_metrics
+    label_hierarchy_array(hier_arr)
+    compute_segementation_metrics(hier_arr)
 
 
 

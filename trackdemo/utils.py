@@ -83,6 +83,6 @@ def df_to_hierarchies(df):
     for frame in frames:
         frame_df = df[df['Frame'] == frame]
         hier = Hierarchy.read_df(frame_df)
-        hier_arr.append(hierarchy)
+        hier_arr.append(hier)
 
     return hier_arr

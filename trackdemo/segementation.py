@@ -70,7 +70,7 @@ def computer_hierarchy(cellprob,dP):
         mask = np.zeros(cellprob.shape)
         mask[sub_coords[:, 0], sub_coords[:, 1]] = 1
         labeled_mask, num_features = measure.label((cellprob * mask) > 1 , connectivity=1, return_num=True)
-        node.cost = 100.0 * num_features / len(node.value)
+        node.uncertainty = 100.0 * num_features / len(node.value)
     
 
     return hier
@@ -128,8 +128,6 @@ def put_segement(coords, hier, remove_small_masks = False):
     MIN_MASK_SZIE = 15
     dbscan = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES) 
 
-    import time
-    t1 = time.time()
     # do subsegementation under segementation hierachy leaves 
     leaves = hier.find_leaves()
     for leave in leaves:
@@ -155,9 +153,6 @@ def put_segement(coords, hier, remove_small_masks = False):
             for l in valid_labels:
                 indices_with_label = np.where(labels == l)[0] 
                 leave.add_sub(Node(itemgetter(*indices_with_label)(sub_indices)))
-
-    t2 = time.time()
-    print(t2-t1)
 
     return hier
 
