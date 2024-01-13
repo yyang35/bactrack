@@ -2,8 +2,8 @@ from scipy.sparse import csr_matrix
 import logging
 import time
 import numpy as np
-import Weight
 
+from .weight import Weight
 
 overlap_weight_logger = logging.getLogger(__name__)
 

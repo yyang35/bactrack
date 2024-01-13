@@ -1,10 +1,11 @@
 import mip
 import logging
 
+from .solver import Solver
 
 MIP_solver_logger = logging.getLogger(__name__)
 
-class MIPSolver:
+class MIPSolver(Solver):
     def __init__(self, weight_matrix, hier_arr):
         self.hier_arr = hier_arr
         self.weight_matrix = self.weight_matrix

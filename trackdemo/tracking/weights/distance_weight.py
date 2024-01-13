@@ -2,13 +2,14 @@ from scipy.sparse import csr_matrix
 import logging
 import time
 import numpy as np
-import Weight
+
+from .weight import Weight
 
 
 distance_weight_logger = logging.getLogger(__name__)
 
 
-class OverlapWeight(Weight):
+class DistanceWeight(Weight):
 
     def __init__(self, hier_arr, seg_N,  T, ):
         self.kd_forest = self._make_kd_forest(hier_arr)

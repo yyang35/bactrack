@@ -11,7 +11,7 @@ class Weight:
 
     def __init__(self, hier_arr, seg_N,  T, ):
         self.hier_arr = hier_arr
-        self.seg_N = seg_N
+        self.seg_N = hier_arr[-1]._index
         self.T = T
 
     def labels(self, hier_source, hier_traget):

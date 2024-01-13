@@ -3,7 +3,8 @@ import config
 import logging
 import numpy as np
 from scipy.sparse import csr_matrix
-from weight import cost_funcs
+
+#from weight import cost_funcs
 
 
 
@@ -71,14 +72,8 @@ def mask_cost(hier_arr, seg_num):
 
 
 def make_end_exception(hier_arr, seg_num):
-    not_start = np.ones(seg_num)
-    not_end = np.ones(seg_num)
-    for node in hier_arr[0].all_nodes():
-        not_start[node.index] = 0
-    for node in hier_arr[-1].all_nodes():
-        not_end[node.index] = 0
-
-    return not_start,not_end
+    frames = np.array([node.frame for hier in hier_arr for node in hier.all_nodes()])
+    return frames == 0, frames == np.max(frames)
 
 
 

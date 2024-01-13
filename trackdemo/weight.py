@@ -10,7 +10,6 @@ from scipy.sparse import csr_matrix
 
 weight_logger = logging.getLogger(__name__)
 
-class overlap_weight:
 
 
 def run_cost():

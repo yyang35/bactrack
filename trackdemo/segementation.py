@@ -11,7 +11,7 @@ import omnipose.core as oc
 import cellpose_omni.dynamics as od
 
 
-from hierarchy import Node, Hierarchy
+from .hierarchy import Node, Hierarchy
 
 import time
 

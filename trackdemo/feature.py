@@ -7,11 +7,7 @@ def label_hierarchy_array(hier_arr):
     total_index = 0
     for hierarchy in hier_arr:
         hierarchy.label_nodes(start_index = total_index)
-        total_index = hierarchy.hyper_index 
-
-    # last assigned index = total_index -1, and index start from 0
-    total_num = total_index
-    return total_num
+        total_index = hierarchy._index 
 
 
 def compute_segementation_metrics(hier_arr):

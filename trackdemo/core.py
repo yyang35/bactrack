@@ -1,8 +1,8 @@
 from enum import Enum
-import util
+import trackdemo.utils as utils
 import logging
 import numpy as np
-from config import SEGEMENTATION_PARAMS_OMNIPOSE, SEGEMENTATION_PARAMS_CELLPOSE
+from .config import SEGEMENTATION_PARAMS_OMNIPOSE, SEGEMENTATION_PARAMS_CELLPOSE
 
 # To avoid any cyclic import, packages are import locally inside method. 
 
@@ -20,16 +20,13 @@ SEGEMENTATION_PARAMS = {
 }
 
 
-def process(
+def compute_hierarchy(
         basedir, 
         hypermodel: ModelEnum = None, 
         chans = [0,0], 
         submodel = None, 
         cost_func = "overlap", 
-        compute_link = True,
-        do_filter = False,
-    ):
-
+):
     hypermodel = ModelEnum.OMNIPOSE if hypermodel is None else hypermodel
 
     if hypermodel == ModelEnum.OMNIPOSE:
@@ -52,7 +49,7 @@ def process(
     use_GPU = core.use_gpu()
     model = models.CellposeModel(gpu=use_GPU, model_type = submodel)
     
-    imags = util.load(basedir, io)
+    imags = utils.load(basedir, io)
     params = SEGEMENTATION_PARAMS[hypermodel]
 
     # segementation model predict field (distance field + flow field), but does not compute mask
@@ -69,42 +66,46 @@ def process(
 
     core_logger.info("Segementation hierarchy builded.")
 
-    total_num = mark_segementation(hier_arr, cost_func)
+    mark_segementation(hier_arr, cost_func)
 
-    if not compute_link:
-        return hier_arr,total_num, None, None
+    return hier_arr
+
+
+def run_tracking(
+        hier_arr, 
+        do_filter = False,
+        
+    ):
+
     
     n, edges = run_tracking(hier_arr, total_num, cost_func, do_filter=do_filter)
     mask_arr, edge_df = run_postprocess(hier_arr, n, edges)
 
-    return hier_arr,total_num,  mask_arr, edge_df 
+    # return hier_arr,total_num,  mask_arr, edge_df 
+
+    pass 
+    
+
 
 
 def mark_segementation(hier_arr, cost_func):
 
-    from hierarchy import Hierarchy
+    from .hierarchy import Hierarchy
     total_num = Hierarchy.label_hierarchy_array(hier_arr)
     Hierarchy.compute_segementation_metrics(hier_arr)
     return total_num
 
 
-def run_tracking(hier_arr, seg_num, cost_func_name, do_filter):
-    from tracking import solve
-    
-    n, e, (rows, cols) = solve(hier_arr, seg_num=seg_num, cost_func_name=cost_func_name, do_filter= do_filter)
-    edges = {(rows[i], cols[i]) for i in e}
-    return n, edges
-
 
 def run_postprocess(hier_arr, n, edges):
-    from util import format_output, store_output
+    from .utils import format_output, store_output
     mask_arr, edge_df  = format_output(hier_arr, n, edges)
     return mask_arr, edge_df
 
 
 def compute_masks(flow):
 
-    from segementation import computer_hierarchy
+    from .segementation import computer_hierarchy
 
     [RGB_dP, dP, cellprob, p, bd, tr, affinity, bounds] = flow
     dP, cellprob = dP.squeeze(), cellprob.squeeze()

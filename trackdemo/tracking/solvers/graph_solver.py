@@ -1,8 +1,10 @@
 import logging
 
+from .solver import Solver
+
 Graph_solver_logger = logging.getLogger(__name__)
 
-class GraphSolver:
+class GraphSolver(Solver):
     def __init__(self, weight_matrix, hier_arr):
         self.hier_arr = hier_arr
         self.weight_matrix = self.weight_matrix

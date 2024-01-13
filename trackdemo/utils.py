@@ -4,6 +4,8 @@ import pandas as pd
 from PIL import Image
 import os
 
+from .hierarchy import Hierarchy
+
 
 def load(basedir, io):
     return read_folder(basedir, io)
@@ -65,3 +67,22 @@ def store_output(mask_arr, edge_df, basedir):
 
     # Save DataFrame to CSV
     edge_df.to_csv(os.path.join(basedir, 'edge_data.csv'), index=False)
+
+
+def hierarchies_to_df(hier_arr):
+    df_list = []
+    for hier in hier_arr:
+        df_list.append(hier.to_df())
+    return pd.concat(df_list, ignore_index=True)
+
+
+def df_to_hierarchies(df):
+    hier_arr = []
+    frames = df['Frame'].unique()
+
+    for frame in frames:
+        frame_df = df[df['Frame'] == frame]
+        hier = Hierarchy.read_df(frame_df)
+        hier_arr.append(hierarchy)
+
+    return hier_arr
