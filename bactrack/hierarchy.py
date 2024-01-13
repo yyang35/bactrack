@@ -91,7 +91,9 @@ class Hierarchy:
     def to_df(self):
         """Converts the entire hierarchy into a pandas DataFrame."""
         node_dicts = [node.to_dict() for node in self.all_nodes(include_root=True)]
-        return pd.DataFrame(node_dicts)
+        df = pd.DataFrame(node_dicts)
+        df['Index'] = df['Index'].astype(int)
+        return df
 
     @staticmethod
     def read_df(df):
