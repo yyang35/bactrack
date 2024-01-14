@@ -6,10 +6,9 @@ def label_hierarchy_array(hier_arr):
     """Labels an array of Hierarchy instances sequentially"""
     total_index = 0
     for hierarchy in hier_arr:
-        hierarchy.label_nodes(start_index = total_index)
-        total_index = hierarchy._index 
+        _, total_index = hierarchy.label_nodes(start_index = total_index)
 
-
+ 
 def compute_segementation_metrics(hier_arr):
     """Computer each candidates segementation in hierarchy prepare for weight calculation"""
     for i in range(len(hier_arr)):
@@ -21,8 +20,8 @@ def compute_segementation_metrics(hier_arr):
         n_dim = coords.shape[1]
         assert n_dim in (2,3), "Only can handle 2D/3D cases now"
 
-        for node in hier.all_nodes():
-            sub_coords = coords[np.array(node.value)]
+        for node in hier.all_nodes(include_root = True):
+            sub_coords =node.value
             n_dim_coords = [sub_coords[:, n] for n in range(n_dim)]
             centroid = [np.mean(coord) for coord in n_dim_coords]
 

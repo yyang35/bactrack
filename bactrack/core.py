@@ -1,5 +1,5 @@
 from enum import Enum
-import trackdemo.utils as utils
+import bactrack.utils as utils
 import logging
 import numpy as np
 from .config import SEGEMENTATION_PARAMS_OMNIPOSE, SEGEMENTATION_PARAMS_CELLPOSE
@@ -66,6 +66,8 @@ def compute_hierarchy(
 
     core_logger.info("Segementation hierarchy builded.")
 
+    mark_segementation(hier_arr)
+
     return hier_arr
 
 
@@ -74,7 +76,6 @@ def run_tracking(
         do_filter = False,
         
     ):
-
     
     n, edges = run_tracking(hier_arr, total_num, cost_func, do_filter=do_filter)
     mask_arr, edge_df = run_postprocess(hier_arr, n, edges)
@@ -86,7 +87,7 @@ def run_tracking(
 
 
 
-def mark_segementation(hier_arr, cost_func):
+def mark_segementation(hier_arr):
 
     from .feature import label_hierarchy_array, compute_segementation_metrics
     label_hierarchy_array(hier_arr)

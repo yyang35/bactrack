@@ -61,18 +61,8 @@ def computer_hierarchy(cellprob,dP):
         if t in niters:
             hier = put_segement(current_coords, hier, remove_small_masks = True)
 
- 
-    hier.root.value = coords
+    _format_hier(hier, cellprob, coords)
     
-    for node in hier.all_nodes(): 
-        node.shape = cellprob.shape
-        sub_coords = coords[np.array(node.value)]
-        mask = np.zeros(cellprob.shape)
-        mask[sub_coords[:, 0], sub_coords[:, 1]] = 1
-        labeled_mask, num_features = measure.label((cellprob * mask) > 1 , connectivity=1, return_num=True)
-        node.uncertainty = 100.0 * num_features / len(node.value)
-    
-
     return hier
 
 
@@ -120,7 +110,6 @@ def _to_torch(p,dP,device):
     return p_torch, dP_torch
 
 
-
 def put_segement(coords, hier, remove_small_masks = False):
     # method to cluster coords: dbscan
     EPS = 2 ** 0.5
@@ -152,11 +141,13 @@ def put_segement(coords, hier, remove_small_masks = False):
             # more than 1 sub-segementation detected under current segementation 
             for l in valid_labels:
                 indices_with_label = np.where(labels == l)[0] 
+                # if sub_indices is [1,6,8,13,16], indices_with_labels = [0,3], it return [1,13]
+                # which indicate this mask take 1, 13 pixels of original coords. 
+                # get index by picking index of current sub-index 
                 leave.add_sub(Node(itemgetter(*indices_with_label)(sub_indices)))
 
     return hier
-
-        
+  
 
 def snap(coords, labels):
     """snapping outliers to nearest cluster"""
@@ -175,3 +166,14 @@ def snap(coords, labels):
         labels[o_inds] = l
 
     return labels
+
+
+def _format_hier(hier, cellprob, coords):
+    for node in hier.all_nodes(): 
+        node.shape = cellprob.shape
+        sub_coords = coords[np.array(node.value)]
+        mask = np.zeros(cellprob.shape)
+        mask[sub_coords[:, 0], sub_coords[:, 1]] = 1
+        labeled_mask, num_features = measure.label((cellprob * mask) > 1 , connectivity=1, return_num=True)
+        node.uncertainty = 100.0 * num_features / len(node.value)
+        node.value = sub_coords

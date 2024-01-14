@@ -69,19 +69,20 @@ def store_output(mask_arr, edge_df, basedir):
     edge_df.to_csv(os.path.join(basedir, 'edge_data.csv'), index=False)
 
 
-def hierarchies_to_df(hier_arr):
+def hiers_to_df(hier_arr):
     df_list = []
     for hier in hier_arr:
         df_list.append(hier.to_df())
     return pd.concat(df_list, ignore_index=True)
 
 
-def df_to_hierarchies(df):
+def df_to_hiers(df):
     hier_arr = []
-    frames = df['Frame'].unique()
-
+    frames = df['frame'].unique()
+    df['super'] = df['super'].astype('Int32')
+    
     for frame in frames:
-        frame_df = df[df['Frame'] == frame]
+        frame_df = df[df['frame'] == frame]
         hier = Hierarchy.read_df(frame_df)
         hier_arr.append(hier)
 

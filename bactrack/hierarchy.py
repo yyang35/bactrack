@@ -13,7 +13,7 @@ class Node:
 
         self.index = kwargs.get('index', None) # index corresponding to linking matrix 
         
-        self.shape = kwargs.get('shape', None)
+        self.shape = kwargs.get('shape', None) # Canvas shape, the original image shape
         self.uncertainty = kwargs.get('uncertainty', None)
         self.area = kwargs.get('area', None)
         self.centroid = kwargs.get('centroid', None)
@@ -35,10 +35,9 @@ class Node:
     
     def to_dict(self):
         """Converts the Node and its hierarchy into a dictionary"""
-        ROOT_PLACEHOLDER = "ROOT"
         node_dict = {attr: getattr(self, attr.lower(), None) for attr in \
-                     ['Value', 'Next','Shape', 'Cost', 'Area', 'Centroid', 'Frame', 'Bound','Index', 'Label',]}
-        node_dict['Super'] = self.super.index if self.super is not None else ROOT_PLACEHOLDER
+                     ['value', 'next','shape', 'uncertainty', 'area', 'centroid', 'frame', 'bound','index', 'label',]}
+        node_dict['super'] = self.super.index if self.super is not None else None
         return node_dict
 
 
@@ -49,17 +48,18 @@ class Hierarchy:
 
     def label_nodes(self, start_index = 0):
         """Labels nodes in order"""
-        self._index = start_index
-        for node in self.root.subs:
-            self._label_nodes_recursive(node)
+        # be careful with hier._index here, so if it have node
+        # [1,2,3,4,5], hier._index = [1,6],
+        # _index[1] is larger than last element in hier, this is for _index[1] - _index[0] be the 
+        # total num of hier. 
+        index = start_index
+        for node in self.all_nodes():
+            node.index = index
+            index += 1
+        self._index = (start_index, index)
+        self.root.index = -1
 
-    def _label_nodes_recursive(self, node):
-        """Helper method to label nodes recursively"""
-        if node:
-            node.index = self._index
-            self._index += 1
-            for sub in node.subs:
-                self._label_nodes_recursive(sub)
+        return self._index 
     
     def find_leaves(self):
         """Returns a list of all leaf nodes"""
@@ -90,29 +90,35 @@ class Hierarchy:
     
     def to_df(self):
         """Converts the entire hierarchy into a pandas DataFrame."""
+        import json
         node_dicts = [node.to_dict() for node in self.all_nodes(include_root=True)]
         df = pd.DataFrame(node_dicts)
-        df['Index'] = df['Index'].astype(int)
+        for col in df.columns:
+            if isinstance(df[col].iloc[0], (np.ndarray)):
+                df[col] = df[col].apply(lambda x: json.dumps(x.tolist()))
+        df['super'] = df['super'].astype('Int32')
         return df
 
     @staticmethod
     def read_df(df):
-        node_dict = {}
-        root_node = None
 
+        node_dict = {}
+        
         # Create all nodes without setting up the hierarchy
         for _, row in df.iterrows():
             kwargs = row.to_dict()
-            node = Node(kwargs.pop('Value'), **kwargs)
+            node = Node(kwargs.pop('value'), **kwargs)
             node_dict[node.index] = node
-            if row['Super'] == 'ROOT':
-                root_node = node
+
+        root_node = node_dict[-1]
 
         # Set up the hierarchy
-        for _, row in df.iterrows():
-            node = node_dict[row['Index']]
-            if row['Super'] != 'ROOT':
-                super_node = node_dict[row['Super']]
-                super_node.add_sub(node)
+        for _, row in df[df['super'].notna()].iterrows():
+            node = node_dict[row['index']]
+            super_node = node_dict[row['super']]
+            super_node.add_sub(node)
 
-        return Hierarchy(root_node)
+        hier = Hierarchy(root_node)
+        hier._index = [np.min(df['index'][df['index'] >= 0]), np.max(df['index']) + 1]
+
+        return hier
