@@ -29,6 +29,15 @@ class Node:
         sub.super = self
         self.subs.append(sub)
 
+    def all_supers(self):
+        n = self
+        supers = []
+        while n.super is not None and n.super.index != -1 :
+            supers.append(n.super.index)
+            n = n.super
+
+        return supers
+
     def is_leaf(self):
         """Returns True if the node is a leaf, False otherwise"""
         return len(self.subs) == 0
@@ -61,7 +70,7 @@ class Hierarchy:
 
         return self._index 
     
-    def find_leaves(self):
+    def all_leaves(self):
         """Returns a list of all leaf nodes"""
         leaves = []
         self._find_leaves_recursive(self.root, leaves)
@@ -92,12 +101,7 @@ class Hierarchy:
         """Converts the entire hierarchy into a pandas DataFrame."""
         import json
         node_dicts = [node.to_dict() for node in self.all_nodes(include_root=True)]
-        df = pd.DataFrame(node_dicts)
-        for col in df.columns:
-            if isinstance(df[col].iloc[0], (np.ndarray)):
-                df[col] = df[col].apply(lambda x: json.dumps(x.tolist()))
-        df['super'] = df['super'].astype('Int32')
-        return df
+        return pd.DataFrame(node_dicts)
 
     @staticmethod
     def read_df(df):

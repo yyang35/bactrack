@@ -25,7 +25,6 @@ def compute_hierarchy(
         hypermodel: ModelEnum = None, 
         chans = [0,0], 
         submodel = None, 
-        cost_func = "overlap", 
 ):
     hypermodel = ModelEnum.OMNIPOSE if hypermodel is None else hypermodel
 

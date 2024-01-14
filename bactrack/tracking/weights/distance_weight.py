@@ -11,7 +11,7 @@ distance_weight_logger = logging.getLogger(__name__)
 
 class DistanceWeight(Weight):
 
-    def __init__(self, hier_arr, seg_N,  T, ):
+    def __init__(self, hier_arr, T = 1):
         self.kd_forest = self._make_kd_forest(hier_arr)
 
     def labels(self, hier_source, hier_traget):

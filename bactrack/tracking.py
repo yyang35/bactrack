@@ -2,7 +2,7 @@ import mip
 import config
 import logging
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import dok_matrix
 
 #from weight import cost_funcs
 

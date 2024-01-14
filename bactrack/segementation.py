@@ -62,7 +62,7 @@ def computer_hierarchy(cellprob,dP):
             hier = put_segement(current_coords, hier, remove_small_masks = True)
 
     _format_hier(hier, cellprob, coords)
-    
+
     return hier
 
 
@@ -118,7 +118,7 @@ def put_segement(coords, hier, remove_small_masks = False):
     dbscan = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES) 
 
     # do subsegementation under segementation hierachy leaves 
-    leaves = hier.find_leaves()
+    leaves = hier.all_leaves()
     for leave in leaves:
         sub_indices = leave.value
         sub_coods = coords[sub_indices, :]
@@ -169,7 +169,7 @@ def snap(coords, labels):
 
 
 def _format_hier(hier, cellprob, coords):
-    for node in hier.all_nodes(): 
+    for node in hier.all_nodes(include_root = True): 
         node.shape = cellprob.shape
         sub_coords = coords[np.array(node.value)]
         mask = np.zeros(cellprob.shape)
