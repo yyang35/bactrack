@@ -21,9 +21,6 @@ class OverlapWeight(Weight):
         mask_target = self.masks[t_target]
 
         for node_source in hier_source.all_nodes():
-            # _index = range of index under this hierarchy
-            # e.g hier._index = [15, 25] 
-            # indicates hier including nodes: 15, 16, .... 23,24, ([15, 25), not include 25)
             crop_mask =  mask_target[node_source.value[:,0],node_source.value[:,1]]
             index, counts = np.unique(crop_mask, return_counts=True)
             stats = dict(zip(index, counts))
