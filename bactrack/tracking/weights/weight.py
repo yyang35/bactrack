@@ -9,9 +9,7 @@ weight_logger = logging.getLogger(__name__)
 
 class Weight:
 
-    def __init__(self, hier_arr, T = 1):
-        self.hier_arr = hier_arr
-        self.seg_N = hier_arr[-1]._index[-1] # last frame, end index
+    def __init__(self, T = 1):
         self.T = T
         self.weight_matrix = dok_matrix((self.seg_N, self.seg_N), dtype=float)
         self.compute_matrix()

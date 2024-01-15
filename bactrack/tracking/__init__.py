@@ -1,2 +1,2 @@
 from .solvers import MIPSolver, GraphSolver, Solver
-from .weights import DistanceWeight, OverlapWeight
+from .weights import DistanceWeight, OverlapWeight, IOUWeight

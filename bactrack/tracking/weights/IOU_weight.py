@@ -5,17 +5,18 @@ import numpy as np
 
 from .weight import Weight
 
-overlap_weight_logger = logging.getLogger(__name__)
+IOU_weight_logger = logging.getLogger(__name__)
 
 
-class OverlapWeight(Weight):
+class IOUWeight(Weight):
 
     def __init__(self, hier_arr, T = 1):
 
         self.hier_arr = hier_arr
         self.seg_N = hier_arr[-1]._index[-1] # last frame, end index
 
-        self.masks, self.supers = self._make_masks(hier_arr)
+        self.masks, self.supers = self._make_leaves_masks(hier_arr)
+        self.areas = self._all_areas()
         super().__init__(T) 
         
 
@@ -28,6 +29,7 @@ class OverlapWeight(Weight):
             crop_mask =  mask_target[node_source.value[:,0],node_source.value[:,1]]
             index, counts = np.unique(crop_mask, return_counts=True)
             stats = dict(zip(index, counts))
+            # label = -1 for background, this is not in segementation. 
             stats.pop(-1, None)
 
             overlapped_leaves = set(stats.keys()).intersection(self.supers.keys())
@@ -39,15 +41,17 @@ class OverlapWeight(Weight):
                     else:
                         stats[super] += stats[l]
 
-            for target_index, overlap in stats.items():
-                self.weight_matrix[node_source.index, target_index] = overlap
+            for target, overlap in stats.items():
+                IoU = overlap / (self.areas[target] + node_source.area - overlap) 
+                self.weight_matrix[node_source.index, target] = IoU
 
 
-    def _make_masks(self, hier_arr):
+    def _make_leaves_masks(self, hier_arr):
         masks = []
         supers = {}
         for hier in hier_arr:
             shape = hier.root.shape
+            # build a background canvas with value = -1
             mask = -1 * np.ones(shape, dtype=object)
             for node in hier.all_leaves():
                 mask[node.value[:, 0], node.value[:, 1]] = node.index
@@ -55,5 +59,11 @@ class OverlapWeight(Weight):
                     supers[node.index] = node.all_supers()
             masks.append(mask)
         return masks, supers
-
-
+    
+    
+    def _all_areas(self):
+        areas = np.zeros(self.seg_N)
+        for hier in self.hier_arr:
+            for node in hier.all_leaves():
+                areas[node.index] = node.area
+        return areas
