@@ -19,7 +19,6 @@ def read_folder(basedir, io):
 
 def format_output(hier_arr, n, edges):
     n_set = set(n)
-    label_assigned = {}
     mask_arr = []
 
     for t in range(len(hier_arr)):
@@ -30,27 +29,20 @@ def format_output(hier_arr, n, edges):
             if node.index in n_set:
                 assert node.frame == t, "Segementation's frame should consist with hierarchy fram"
                 mask[node.value[:,0], node.value[:,1]] = label
-                label_assigned[node.index] = {"frame": node.frame, "label" : label} 
+                node.label = label
                 label += 1
         mask_arr.append( mask)
 
-    
     data = []
-    for edge in edges:
-        source_label = label_assigned.get(edge[0])
-        target_label = label_assigned.get(edge[1])
-        if source_label and target_label:
-            data.append([
-                source_label["label"],
-                source_label["frame"],
-                target_label["label"],
-                target_label["frame"]
-            ])
 
-    # Create DataFrame
-    edge_df = pd.DataFrame(data, columns=['Source Label', 'Source Frame', 'Target Label', 'Target Frame'])
+    for (source_index, target_index), _ in e.items():
+    # Assuming hier_arr is indexed the same way as edges
+        data.append([source_index, target_index,])
+
+    edge_df = pd.DataFrame(data, columns=['Source Index', 'Target Index'])
     
     return mask_arr, edge_df 
+
 
 
 

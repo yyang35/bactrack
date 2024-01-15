@@ -175,5 +175,5 @@ def _format_hier(hier, cellprob, coords):
         mask = np.zeros(cellprob.shape)
         mask[sub_coords[:, 0], sub_coords[:, 1]] = 1
         labeled_mask, num_features = measure.label((cellprob * mask) > 1 , connectivity=1, return_num=True)
-        node.uncertainty = 100.0 * num_features / len(node.value)
+        node.uncertainty = num_features / len(node.value)
         node.value = sub_coords

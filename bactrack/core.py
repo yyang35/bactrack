@@ -2,6 +2,8 @@ from enum import Enum
 import bactrack.utils as utils
 import logging
 import numpy as np
+from tqdm import tqdm
+
 from .config import SEGEMENTATION_PARAMS_OMNIPOSE, SEGEMENTATION_PARAMS_CELLPOSE
 
 # To avoid any cyclic import, packages are import locally inside method. 
@@ -60,7 +62,7 @@ def compute_hierarchy(
 
     # base on predicted field, run dynamic integration, computer segementation hierarchy
     hier_arr = []
-    for flow in flows:
+    for flow in tqdm(flows):
         hier_arr.append(compute_masks(flow))
 
     core_logger.info("Segementation hierarchy builded.")

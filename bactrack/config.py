@@ -3,9 +3,9 @@
 MIN_MASK_SZIE = 15
 
 #tracking related
-DIVISION_COST = -0.1
-APPEAR_COST = -0.1
-DISAPPEAR_COST = -0.1
+DIVISION_COST = -0.2
+APPEAR_COST = -1
+DISAPPEAR_COST = -1
 
 #segementation predict related 
 SEGEMENTATION_PARAMS_OMNIPOSE = {
