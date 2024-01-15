@@ -5,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 from .config import SEGEMENTATION_PARAMS_OMNIPOSE, SEGEMENTATION_PARAMS_CELLPOSE
+from .tracking import Weight, Solver
 
 # To avoid any cyclic import, packages are import locally inside method. 
 
@@ -53,48 +54,60 @@ def compute_hierarchy(
     imags = utils.load(basedir, io)
     params = SEGEMENTATION_PARAMS[hypermodel]
 
-    # segementation model predict field (distance field + flow field), but does not compute mask
+    # Step1. segementation model predict field (distance field + flow field), but does not compute mask
     params['compute_masks'] = False
     params['channels'] = chans
     _, flows, _ = model.eval(imags, **params)
 
     core_logger.info("Segementation: predicting fields finish.")
 
-    # base on predicted field, run dynamic integration, computer segementation hierarchy
+    # Step2. base on predicted field, run dynamic integration, computer segementation hierarchy
     hier_arr = []
     for flow in tqdm(flows):
         hier_arr.append(compute_masks(flow))
 
     core_logger.info("Segementation hierarchy builded.")
 
-    mark_segementation(hier_arr)
+    # Step3. mark the freatures of segementations in hierarchy
+    from .hierarchy import Hierarchy 
+    Hierarchy.label_hierarchy_array(hier_arr)
+    Hierarchy.compute_segementation_metrics(hier_arr)
+    
+    core_logger.info("Labeled feature of each segementation in hierarchy.")
 
     return hier_arr
 
 
-def run_tracking(
-        hier_arr, 
-        do_filter = False,
-        
-    ):
+def run_tracking(hier_arr, solver_name = "mip_solver", weight_name = "overlap_weight", **kwargs):
+    from .tracking import MIPSolver, GraphSolver
+    from .tracking import IOUWeight, OverlapWeight, DistanceWeight
+
+    solvers = {
+        "mip_solver": MIPSolver,
+        "graph_solver": GraphSolver,
+    }
+
+    weights = {
+        "iou_weight":  IOUWeight,
+        "Overlap_weight": OverlapWeight,
+        "Distance_weight": DistanceWeight,
+    }
+
+    Solver = solvers.get(solver_name.lower())
+    if not Solver:
+         raise ValueError(f"Solver '{solver_name}' not found")
+
+    Weight = weights.get(weight_name.lower())
+    if not Weight:
+         raise ValueError(f"Weight '{weight_name}' not found")
     
-    n, edges = run_tracking(hier_arr, total_num, cost_func, do_filter=do_filter)
-    mask_arr, edge_df = run_postprocess(hier_arr, n, edges)
+    weight = Weight(hier_arr, **kwargs)
+    solver = Solver(weight.weight_matrix, weight.mask_penalty)
+    nodes, edges = solver.solve()
 
-    # return hier_arr,total_num,  mask_arr, edge_df 
+    return nodes, edges
 
-    pass 
     
-
-
-
-def mark_segementation(hier_arr):
-
-    from .feature import label_hierarchy_array, compute_segementation_metrics
-    label_hierarchy_array(hier_arr)
-    compute_segementation_metrics(hier_arr)
-
-
 
 def run_postprocess(hier_arr, n, edges):
     from .utils import format_output, store_output

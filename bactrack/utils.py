@@ -35,7 +35,7 @@ def format_output(hier_arr, n, edges):
 
     data = []
 
-    for (source_index, target_index), _ in e.items():
+    for (source_index, target_index), _ in edges.items():
     # Assuming hier_arr is indexed the same way as edges
         data.append([source_index, target_index,])
 
