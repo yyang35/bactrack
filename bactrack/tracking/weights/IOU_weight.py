@@ -42,7 +42,7 @@ class IOUWeight(Weight):
                         stats[super] += stats[l]
 
             for target, overlap in stats.items():
-                IoU = overlap / (self.areas[target] + node_source.area - overlap) 
+                IoU = overlap * 1.0 / (self.areas[target] + node_source.area - overlap) 
                 self.weight_matrix[node_source.index, target] = IoU
 
 
@@ -64,6 +64,6 @@ class IOUWeight(Weight):
     def _all_areas(self):
         areas = np.zeros(self.seg_N)
         for hier in self.hier_arr:
-            for node in hier.all_leaves():
+            for node in hier.all_nodes():
                 areas[node.index] = node.area
         return areas
