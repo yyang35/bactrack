@@ -42,6 +42,8 @@ class MIPSolver(Solver):
 
         self.nodes, self.edges = self._basic_mip()
         self._add_hierarchy_conflict()
+        self._add_coverage()
+
         if self.mask_penalty is not None:
              self.model.objective -= mip.xsum(self.mask_penalty * self.nodes)
 
@@ -57,66 +59,33 @@ class MIPSolver(Solver):
         not_start = frames != 0
         not_end = frames != np.max(frames)
 
-        # create objects
-        nodes = self.model.add_var_tensor((self.seg_N,), name="nodes", var_type=mip.INTEGER)
-        edges = self.model.add_var_tensor((self.weight_matrix.count_nonzero(),), name="edges", var_type=mip.BINARY)
+        # set objective
+        nodes = self.model.add_var_tensor((self.seg_N,), name="nodes", var_type=mip.BINARY)
         appearances = self.model.add_var_tensor((self.seg_N,), name="appear", var_type=mip.BINARY)
         disappearances = self.model.add_var_tensor((self.seg_N,), name="disappear", var_type=mip.BINARY )
-        divisions = self.model.add_var_tensor((self.seg_N,), name="division", var_type=mip.INTEGER)
-        merges = self.model.add_var_tensor((self.seg_N,), name="merge", var_type=mip.INTEGER)
+        divisions = self.model.add_var_tensor((self.seg_N,), name="division", var_type=mip.INTEGER, lb = 0)
+        edges = self.model.add_var_tensor((self.weight_matrix.count_nonzero(),), name="edges", var_type=mip.BINARY)
 
-        is_nodes = self.model.add_var_tensor((self.seg_N,), name="nodes_binary", var_type=mip.BINARY)
-        is_divisions = self.model.add_var_tensor((self.seg_N,), name="division_binary", var_type=mip.BINARY)
-        is_merges = self.model.add_var_tensor((self.seg_N,), name="merge_binary", var_type=mip.BINARY)
-        is_edges_in = self.model.add_var_tensor((self.seg_N,), name="edges_in_binary", var_type=mip.BINARY)
-        is_edges_out = self.model.add_var_tensor((self.seg_N,), name="edges_out_binary", var_type=mip.BINARY)
-        
-        # set objective
         self.model.objective = (
-            mip.xsum( self.weight_matrix.data * edges )
-            # Notice all following cost are nagetive 
-            + mip.xsum( divisions * config.DIVISION_COST )
-            + mip.xsum( merges * config.MERGE_COST )
+            mip.xsum( divisions * config.DIVISION_COST )
             + mip.xsum( (appearances * not_start) * config.APPEAR_COST)
             + mip.xsum( (disappearances * not_end) * config.DISAPPEAR_COST)
-            + mip.xsum( self.mask_penalty * is_nodes )
+            + mip.xsum( self.weight_matrix.data * edges)
         )
         
-        # set integer to binary constrain:
-        # nothing interestin below: it just makes when Integer N > 0, binary n = 1, and N = 0, n =0
-        # by setting N <= M * n (where M is large number) 
-        for i in range(self.seg_N):
-            self.model.add_constr( nodes[i] <= is_nodes[i] * LARGE )
-            self.model.add_constr( divisions[i] <= is_divisions[i] * LARGE )
-            self.model.add_constr( merges[i] <= is_merges[i] * LARGE )
-
-        # set flow constrain 
+        # set constrain 
         rows, cols = self.weight_matrix.nonzero() 
         for i in range(self.seg_N):
             target_indices = np.where(rows == i)[0]
             source_indices = np.where(cols == i)[0]
             # single incoming node
-            self.model.add_constr(mip.xsum(edges[source_indices]) + appearances[i] == nodes[i] + merges[i])
+            self.model.add_constr(mip.xsum(edges[source_indices]) + appearances[i] == nodes[i])
             # flow conservation
-            self.model.add_constr(mip.xsum(edges[target_indices]) + disappearances[i] == nodes[i] + divisions[i])
+            self.model.add_constr(nodes[i] + divisions[i] == mip.xsum(edges[target_indices]) + disappearances[i])
+            # check this 
+            self.model.add_constr(LARGE * nodes[i] >= divisions[i])
 
-            # set binary constrain:
-            self.model.add_constr( mip.xsum(edges[source_indices]) <= is_edges_in[i] * LARGE)
-            self.model.add_constr( mip.xsum(edges[target_indices]) <= is_edges_out[i] * LARGE)
-
-        # set cell event constrain:
-        for i in range(self.seg_N):
-            self.model.add_constr(is_merges[i] + is_divisions[i] <= 1)
-            self.model.add_constr(is_edges_in[i] + appearances[i] <= 1)
-            self.model.add_constr(is_edges_out[i] + disappearances[i] <= 1)
-
-        # cell event across cell constain:
-        for e in range(self.weight_matrix.count_nonzero()):
-            target_index = rows[e]
-            source_indiex = cols[e]
-            self.model.add_constr(is_divisions[target_index] + is_merges[source_indiex] + edges[e] <= 2)
-
-        return is_nodes, edges
+        return nodes, edges
 
 
     def _add_hierarchy_conflict(self):
@@ -125,3 +94,27 @@ class MIPSolver(Solver):
                 for super in node.all_supers():
                     self.model.add_constr(self.nodes[node.index] + self.nodes[super] <= 1)
        
+
+    def _add_coverage(self):
+        coverage_arr = [0] * self.seg_N 
+        for hier in self.hier_arr:
+            hier.root.coverage = 1 / len(self.hier_arr)
+            self._assign(hier.root)
+            for node in hier.all_nodes():
+                coverage_arr[node.index] = node.coverage
+
+        self.model.add_constr(mip.xsum(self.nodes * coverage_arr) >= 0.75)
+        
+
+    def _assign(self, node):
+        if node is None:
+            return  
+        for sub in node.subs:
+            sub.coverage = node.coverage / len(node.subs)
+            self._assign(sub)
+
+        
+
+
+
+
