@@ -1,11 +1,11 @@
 from enum import Enum
-import bactrack.utils as utils
 import logging
 import numpy as np
 from tqdm import tqdm
 
 from .config import SEGEMENTATION_PARAMS_OMNIPOSE, SEGEMENTATION_PARAMS_CELLPOSE
 from .tracking import Weight, Solver
+from . import io
 
 # To avoid any cyclic import, packages are import locally inside method. 
 
@@ -22,9 +22,8 @@ SEGEMENTATION_PARAMS = {
     ModelEnum.CELLPOSE: SEGEMENTATION_PARAMS_CELLPOSE
 }
 
-
 def compute_hierarchy(
-        basedir, 
+        data, 
         hypermodel: ModelEnum = None, 
         chans = [0,0], 
         submodel = None, 
@@ -33,25 +32,27 @@ def compute_hierarchy(
 
     if hypermodel == ModelEnum.OMNIPOSE:
         import omnipose
-        from cellpose_omni import io, transforms, models, core
+        from cellpose_omni import io as seg_io
+        from cellpose_omni import transforms, models, core
         from omnipose.utils import normalize99
     elif hypermodel == ModelEnum.CELLPOSE:
         import cellpose
-        from cellpose import io, transforms, models, core
+        from cellpose import io as seg_io
+        from cellpose import transforms, models, core
         from cellpose.transforms import normalize99
     else:
         raise Exception("No support on model {hypermodel}")
     
     if submodel not in models.MODEL_NAMES:
         core_logger.info(
-            "Model {submodel} isn't in {hypermodel.value}'s model zoo. Use default model"
+            "Model {submodel} isn't in {hypermodel.value}'s model candidates. Use default model"
         )
         submodel = None
     
     use_GPU = core.use_gpu()
-    model = models.CellposeModel(gpu=use_GPU, model_type = submodel)
+    model = models.CellposeModel(gpu=use_GPU, model_type=submodel)
     
-    imags = utils.load(basedir, io)
+    imags = io.load(data, seg_io)
     params = SEGEMENTATION_PARAMS[hypermodel]
 
     # Step1. segementation model predict field (distance field + flow field), but does not compute mask
@@ -110,7 +111,7 @@ def run_tracking(hier_arr, solver_name = "mip_solver", weight_name = "overlap_we
     
 
 def run_postprocess(hier_arr, n, edges):
-    from .utils import format_output, store_output
+    from .io import format_output, store_output
     mask_arr, edge_df  = format_output(hier_arr, n, edges)
     return mask_arr, edge_df
 

@@ -3,18 +3,35 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 import os
+import logging
 
 from .hierarchy import Hierarchy
 
+io_logger = logging.getLogger(__name__)
 
-def load(basedir, io):
-    return read_folder(basedir, io)
 
-def read_folder(basedir, io):
-    files = io.get_image_files(basedir)
-    imgs = [io.imread(f) for f in files]
+def load(data, seg_io):
 
-    return imgs
+    def is_valid_image_structure(data):
+        #can be list of 2D/3D images, or array of 2D/3D images, or 4D image array
+        if isinstance(data, list):
+            return all(isinstance(item, np.ndarray) and item.ndim in [2, 3] for item in data)
+        elif isinstance(data, np.ndarray):
+            return data.ndim in [3, 4]
+        return False
+
+    if isinstance(data, str) and os.path.isdir(data):
+        files = seg_io.get_image_files(data)
+        imgs = [seg_io.imread(f) for f in files]
+        return imgs
+    elif is_valid_image_structure(data):
+        return data  
+    elif all(isinstance(item, str) for item in data):
+        imgs = [seg_io.imread(f) for f in data]
+        return imgs
+    else:
+        io_logger.warning(f'Invalid input: {data}')
+        return None
 
 
 def format_output(hier_arr, n, edges):
@@ -27,7 +44,7 @@ def format_output(hier_arr, n, edges):
         mask = np.zeros(hier.root.shape)
         for node in hier.all_nodes():
             if node.index in n_set:
-                assert node.frame == t, "Segementation's frame should consist with hierarchy fram"
+                assert node.frame == t, "Segementation's frame should consist with hierarchy frame"
                 mask[node.value[:,0], node.value[:,1]] = label
                 node.label = label
                 label += 1
@@ -42,8 +59,6 @@ def format_output(hier_arr, n, edges):
     edge_df = pd.DataFrame(data, columns=['Source Index', 'Target Index'])
     
     return mask_arr, edge_df 
-
-
 
 
 def store_output(mask_arr, edge_df, basedir):

@@ -3,7 +3,7 @@ import os
 
 from .core import compute_hierarchy, run_tracking
 from .core import ModelEnum
-from . import utils 
+from . import io 
 
 
 def main():
@@ -37,8 +37,8 @@ def main():
     nodes, edges = run_tracking(hier_arr, args.solver_name, args.weight_name)
 
     # Output ans store result 
-    masks, edges_df = utils.format_output(hier_arr, nodes, edges)
-    nodes_df = utils.hiers_to_df(hier_arr)
+    masks, edges_df = io.format_output(hier_arr, nodes, edges)
+    nodes_df = io.hiers_to_df(hier_arr)
 
     nodes_df.to_pickle(os.path.join(args.basedir, "cells.pkl"))
     edges_df.to_pickle(os.path.join(args.basedir, "links.pkl"))

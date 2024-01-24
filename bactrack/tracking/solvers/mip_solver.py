@@ -15,7 +15,7 @@ class MIPSolver(Solver):
         self.hier_arr = hier_arr
         self.weight_matrix = weight_matrix.tocsr()
         self.seg_N = hier_arr[-1]._index[-1]
-        self.model =  mip.Model(sense=mip.MAXIMIZE, solver_name=mip.GUROBI)
+        self.model = mip.Model(sense=mip.MAXIMIZE, solver_name=mip.GUROBI)
         self.mask_penalty = mask_penalty
         self.nodes = None
         self.edges = None
@@ -43,9 +43,6 @@ class MIPSolver(Solver):
         self.nodes, self.edges = self._basic_mip()
         self._add_hierarchy_conflict()
         self._add_coverage()
-
-        if self.mask_penalty is not None:
-             self.model.objective -= mip.xsum(self.mask_penalty * self.nodes)
 
         t_used = time.time() - t1
         MIP_solver_logger.info(f"MIP problem set up: time used {t_used} sec")
@@ -95,7 +92,7 @@ class MIPSolver(Solver):
                     self.model.add_constr(self.nodes[node.index] + self.nodes[super] <= 1)
        
 
-    def _add_coverage(self):
+    def _add_coverage(self, threshold = 1):
         coverage_arr = [0] * self.seg_N 
         for hier in self.hier_arr:
             hier.root.coverage = 1 / len(self.hier_arr)
@@ -103,7 +100,7 @@ class MIPSolver(Solver):
             for node in hier.all_nodes():
                 coverage_arr[node.index] = node.coverage
 
-        self.model.add_constr(mip.xsum(self.nodes * coverage_arr) >= 0.75)
+        self.model.add_constr(mip.xsum(self.nodes * coverage_arr) >= threshold)
         
 
     def _assign(self, node):
