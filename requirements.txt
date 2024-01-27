@@ -13,3 +13,4 @@ scikit-image
 torch
 tqdm
 psutil
+scipy
