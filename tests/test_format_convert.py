@@ -1,4 +1,3 @@
-import pytest
 from bactrack import io
 
 def test_hiers_to_df_basic():
