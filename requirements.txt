@@ -13,4 +13,4 @@ scikit-image
 torch
 tqdm
 psutil
-scipy
+scipy < 1.4.0
