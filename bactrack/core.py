@@ -90,8 +90,8 @@ def run_tracking(hier_arr, solver_name = "mip_solver", weight_name = "overlap_we
 
     weights = {
         "iou_weight":  IOUWeight,
-        "Overlap_weight": OverlapWeight,
-        "Distance_weight": DistanceWeight,
+        "overlap_weight": OverlapWeight,
+        "distance_weight": DistanceWeight,
     }
 
     Solver = solvers.get(solver_name.lower())
@@ -103,7 +103,7 @@ def run_tracking(hier_arr, solver_name = "mip_solver", weight_name = "overlap_we
          raise ValueError(f"Weight '{weight_name}' not found")
     
     weight = Weight(hier_arr, **kwargs)
-    solver = Solver(weight.weight_matrix, weight.mask_penalty)
+    solver = Solver(weight.weight_matrix, hier_arr, mask_penalty = weight.mask_penalty)
     nodes, edges = solver.solve()
 
     return nodes, edges

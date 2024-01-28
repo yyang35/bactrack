@@ -1,0 +1,23 @@
+name: bactrack
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.8
+  - cellpose>=2.2.3
+  - numpy
+  - pandas
+  - Pillow
+  - pytest
+  - scikit-learn
+  - setuptools
+  - scikit-image
+  - pytorch
+  - tqdm
+  - psutil
+  - scipy
+  - pip:
+    - mip
+    - git+https://github.com/yyang35/omnipose
+

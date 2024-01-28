@@ -18,4 +18,8 @@ def test_segement():
     hier_arr = core.compute_hierarchy(masks_array, submodel= 'bact_phase_omni')
     assert(len(hier_arr) == 2)
 
+    nodes, edges = core.run_tracking(hier_arr)
+    assert np.sum(nodes) == 2
+
+
 

@@ -12,10 +12,16 @@ MIP_solver_logger = logging.getLogger(__name__)
 class MIPSolver(Solver):
     def __init__(self, weight_matrix, hier_arr, mask_penalty = None):
 
+        try:
+            # Attempt to create a model with Gurobi as the solver
+            self.model = mip.Model(sense=mip.MAXIMIZE, solver_name=mip.GUROBI)
+        except:
+            # Fallback to CBC if Gurobi is not available or there's an error
+            self.model = mip.Model(sense=mip.MAXIMIZE, solver_name=mip.CBC)
+
         self.hier_arr = hier_arr
         self.weight_matrix = weight_matrix.tocsr()
         self.seg_N = hier_arr[-1]._index[-1]
-        self.model = mip.Model(sense=mip.MAXIMIZE, solver_name=mip.GUROBI)
         self.mask_penalty = mask_penalty
         self.nodes = None
         self.edges = None
