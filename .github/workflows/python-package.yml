@@ -26,10 +26,12 @@ jobs:
     
     - name: List installed packages
       run: |
+        conda init
         conda activate bactrack
         conda list
 
     - name: Activate Conda environment and Run Tests
       run: |
+        conda init
         conda activate bactrack
         pytest
