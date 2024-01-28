@@ -59,7 +59,7 @@ class ScipySolver(Solver):
             + division_obj.tolist() + edge_obj.tolist()
 
         
-        def _index(self, type, index):
+        def _index(type, index):
             return ['APPEAR', 'DISAPPEAR', 'DIVISION', 'EDGE'].index(type) * self.seg_N
 
         rows, cols = self.weight_matrix.nonzero() 
