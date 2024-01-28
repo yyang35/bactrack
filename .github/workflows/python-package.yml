@@ -24,9 +24,9 @@ jobs:
         activate-environment: bactrack
         auto-activate-base: false
     
-   - name: List installed packages
-    run: |
-      conda list
+    - name: List installed packages
+      run: |
+        conda list
 
     - name: Activate Conda environment and Run Tests
       run: |
