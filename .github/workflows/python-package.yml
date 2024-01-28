@@ -22,7 +22,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         environment-file: environment.yaml
-        activate-environment: myenv
+        activate-environment: bactrack
         auto-activate-base: false
     - name: Lint with flake8
       run: |
