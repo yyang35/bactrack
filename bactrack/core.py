@@ -80,12 +80,12 @@ def compute_hierarchy(
 
 
 def run_tracking(hier_arr, solver_name = "mip_solver", weight_name = "overlap_weight", **kwargs):
-    from .tracking import MIPSolver, GraphSolver
+    from .tracking import MIPSolver, ScipySolver
     from .tracking import IOUWeight, OverlapWeight, DistanceWeight
 
     solvers = {
         "mip_solver": MIPSolver,
-        "graph_solver": GraphSolver,
+        "scipy_solver": ScipySolver,
     }
 
     weights = {
