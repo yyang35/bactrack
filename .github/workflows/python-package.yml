@@ -21,7 +21,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        environment-file: environment.yaml
+        environment-file: .pre-commit-config.yaml
         activate-environment: bactrack
         auto-activate-base: false
 
@@ -30,4 +30,14 @@ jobs:
         source /usr/share/miniconda/etc/profile.d/conda.sh
         conda activate bactrack
         conda list
-        pytest
+        pytest --cov=my_package
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true
+        verbose: true
+
