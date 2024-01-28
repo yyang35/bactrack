@@ -16,6 +16,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
     - name: Set up Conda
       uses: conda-incubator/setup-miniconda@v2
       with:
@@ -23,15 +24,10 @@ jobs:
         environment-file: environment.yaml
         activate-environment: bactrack
         auto-activate-base: false
-    
-    - name: List installed packages
+
+    - name: Run Tests
       run: |
-        conda init
+        source /usr/share/miniconda/etc/profile.d/conda.sh
         conda activate bactrack
         conda list
-
-    - name: Activate Conda environment and Run Tests
-      run: |
-        conda init
-        conda activate bactrack
         pytest
