@@ -35,7 +35,7 @@ jobs:
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2
       with:
-        CODECOV_TOKEN: 7ae0e45d-e732-4768-9c09-ec1cb81e712e
+        token: 7ae0e45d-e732-4768-9c09-ec1cb81e712e
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella

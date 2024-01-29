@@ -1,7 +1,6 @@
 # BACTRACK
 
 ![Tests](https://github.com/yyang35/bactrack/actions/workflows/python-package.yml/badge.svg)
-
 [![codecov](https://codecov.io/gh/yyang35/bactrack/branch/main/graph/badge.svg?token=7ae0e45d-e732-4768-9c09-ec1cb81e712e)](https://codecov.io/gh/yyang35/bactrack)
 
 
@@ -10,7 +9,7 @@ A cell tracker maximizing accuracy through diverse segmentation analysis and mix
 
 ## Introduction
 
-Bactrack is highly inspired by [ultrack](https://github.com/royerlab/ultrack) and [paper](https://arxiv.org/abs/2308.04526). Bactrack uses segementation hierarchy to considers various segmentation scenarios, and hierarchy is based on [Omnipose](https://github.com/kevinjohncutler/omnipose/) dynamics and pixcel clustering logic, for detail check [Paper](https://www.nature.com/articles/s41592-022-01639-4), and using mip solver to assign cell from frame ti to frame tf. 
+Bactrack is inspired by [ultrack](https://github.com/royerlab/ultrack)([paper](https://arxiv.org/abs/2308.04526)). Bactrack uses segementation hierarchy to allow various segmentation scenarios, and hierarchy is build on on [Omnipose](https://github.com/kevinjohncutler/omnipose/) dynamics and pixcel clustering logic, for detail check [Paper](https://www.nature.com/articles/s41592-022-01639-4), and using mip solver to assign cell from one frame to cell in following frame by maximize [weights](https://github.com/yyang35/bactrack/tree/dev/bactrack/tracking/weights). 
 
 For assignment algorithm, Bactrack includes following mip solvers: [HiGHS](https://highs.dev/), [CBC](https://www.coin-or.org/Cbc/cbcuserguide.html), [Gurobi](https://www.gurobi.com/solutions/gurobi-optimizer) for tracking assignment task. 
 All of these mip solver will return the same optimized global maximum result but with different speed. For perfermance comparsion between mip solvers check this [benchmark](https://plato.asu.edu/ftp/milp.html). 
