@@ -11,6 +11,7 @@ def main():
 
     # Define arguments for compute_hierarchy
     parser.add_argument('--basedir', type=str, required=True, help='Base directory for images')
+    parser.add_argument('--outdir', type=str, required=True, help='Base directory for images')
     parser.add_argument('--hypermodel', type=str, default=None, choices=['omnipose', 'cellpose'], help='Hypermodel to use')
     parser.add_argument('--chans', nargs=2, type=int, default=[0, 0], help='Channel configuration')
     parser.add_argument('--submodel', type=str, default=None, help='Submodel to use')
@@ -40,8 +41,9 @@ def main():
     masks, edges_df = io.format_output(hier_arr, nodes, edges)
     nodes_df = io.hiers_to_df(hier_arr)
 
-    nodes_df.to_pickle(os.path.join(args.basedir, "cells.pkl"))
-    edges_df.to_pickle(os.path.join(args.basedir, "links.pkl"))
+    io.store_mask_arr(masks, basedir=args.outdir + "/masks")
+    nodes_df.to_pickle(os.path.join(args.outdir, "cells.pkl"))
+    edges_df.to_pickle(os.path.join(args.outdir, "links.pkl"))
 
     
 
