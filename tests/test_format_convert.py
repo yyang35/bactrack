@@ -1,19 +1,39 @@
-from bactrack import io
+from bactrack import io, core
+import pytest
+import numpy as np
+import pandas as pd
 
-def test_hiers_to_df_basic():
-    # Test basic functionality
-    #input_data = ...
-    #expected_output = ...
-    #assert io.hiers_to_df(input_data) == expected_output
+@pytest.fixture(scope='session')
+def compute_result():
+    # ... your setup code for hier_arr ...
+    diameter = 30
+    radius = diameter // 2
+    Y, X = np.ogrid[:diameter, :diameter]
+    dist_from_center = np.sqrt((X - radius)**2 + (Y - radius)**2)
+    mask = dist_from_center <= radius
+    single_mask = np.where(mask, 0, 255).astype(np.uint8)
 
-    return True
+    num_masks = 2
+    masks = [single_mask.copy() for _ in range(num_masks)]
+    masks_array = np.array(masks)
 
-def test_hiers_to_df_edge_case():
-    # Test an edge case
-    return True 
+    hier_arr = core.compute_hierarchy(masks_array, submodel='bact_phase_omni')
+    nodes, edges = core.run_tracking(hier_arr, weight_name='overlap_weight', solver_name = "scipy_solver")
 
-def test_hiers_to_df_error_handling():
-    # Test error handling
-    #with pytest.raises(SomeException):
-        #io.hiers_to_df(invalid_input)
-    return True
+    return hier_arr, nodes, edges
+
+
+def test_hiers_to_df_edge_case(compute_result):
+    hier_arr, nodes, edges = compute_result
+    df = io.hiers_to_df(hier_arr)
+    assert len(df) > 0
+    new_hier_arr = io.df_to_hiers(df)
+    assert len(new_hier_arr) == len(hier_arr)
+    assert new_hier_arr[-1]._index == hier_arr[-1]._index
+
+
+def test_hiers_to_df_error_handling(compute_result):
+    hier_arr, nodes, edges = compute_result
+    m, e = io.format_output(hier_arr, nodes, edges)
+    assert len(m) > 0
+    assert isinstance(e, pd.DataFrame)

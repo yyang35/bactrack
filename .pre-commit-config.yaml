@@ -9,6 +9,7 @@ dependencies:
   - numpy
   - pandas
   - Pillow
+  - pytest
   - scikit-learn
   - setuptools
   - scikit-image
@@ -16,6 +17,8 @@ dependencies:
   - tqdm
   - psutil
   - scipy
+  - pytest-cov
+  - coverage
   - pip:
     - git+https://github.com/suzhenyu22/python-mip@dev
     - git+https://github.com/yyang35/omnipose
