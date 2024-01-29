@@ -1,12 +1,18 @@
 # BACTRACK
 
-![tests](https://github.com/royerlab/ultrack/actions/workflows/test_pull_request.yml/badge.svg)
-[![codecov](https://codecov.io/gh/royerlab/ultrack/branch/main/graph/badge.svg?token=9FFo4zNtYP)](https://codecov.io/gh/royerlab/ultrack)
+![Tests](https://github.com/yyang35/bactrack/actions/workflows/python-package.yml/badge.svg)
+
+[![codecov](https://codecov.io/gh/yyang35/bactrack/branch/main/graph/badge.svg?token=7ae0e45d-e732-4768-9c09-ec1cb81e712e)](https://codecov.io/gh/yyang35/bactrack)
 
 
 A cell tracker maximizing accuracy through diverse segmentation analysis and mixed integer programming optimization
 
-We include following mip solvers: [HiGHS](https://highs.dev/), [CBC](https://www.coin-or.org/Cbc/cbcuserguide.html), [Gurobi](https://www.gurobi.com/solutions/gurobi-optimizer) for tracking assignment task. 
+
+## Introduction
+
+Bactrack is highly inspired by [ultrack](https://github.com/royerlab/ultrack) and [paper](https://arxiv.org/abs/2308.04526). Bactrack uses segementation hierarchy to considers various segmentation scenarios, and hierarchy is based on [Omnipose](https://github.com/kevinjohncutler/omnipose/) dynamics and pixcel clustering logic, for detail check [Paper](https://www.nature.com/articles/s41592-022-01639-4), and using mip solver to assign cell from frame ti to frame tf. 
+
+For assignment algorithm, Bactrack includes following mip solvers: [HiGHS](https://highs.dev/), [CBC](https://www.coin-or.org/Cbc/cbcuserguide.html), [Gurobi](https://www.gurobi.com/solutions/gurobi-optimizer) for tracking assignment task. 
 All of these mip solver will return the same optimized global maximum result but with different speed. For perfermance comparsion between mip solvers check this [benchmark](https://plato.asu.edu/ftp/milp.html). 
  In short, speed of Gurobi is fastest (Gurobi < HiGHS < CBC). 
 
@@ -25,6 +31,13 @@ If you just need a workable version, use pip to install this package and use HiG
 
 If you require CBC/ GUROBI, especially when you want obtain fastest speed of GUROBI and ready to apply for a academic liense from [Gurobi](https://www.gurobi.com/solutions/gurobi-optimizer), you should set up conda enviroment.
 
+- ### pip
+  Install pip,  make sure pip is  installed, you can download and install it by following the instructions on the [official pip installation page](https://pip.pypa.io/en/stable/installation/).
+  Just do pip install, the requirment package will be setup. 
+  ```bash
+  pip install git+https://github.com/yyang35/backtrack
+  ```
+
 - ### Conda
 
   Install Conda: First, make sure you have Conda installed. You can find the installation instructions on the [Conda official documentation](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
@@ -39,13 +52,6 @@ If you require CBC/ GUROBI, especially when you want obtain fastest speed of GUR
   conda env create -f environment.yaml
   conda activate bactrack
   pip install .
-  ```
-
-- ### pip
-  Install pip,  make sure pip is  installed, you can download and install it by following the instructions on the [official pip installation page](https://pip.pypa.io/en/stable/installation/).
-  Just do pip install, the requirment package will be setup. 
-  ```bash
-  pip install git+https://github.com/yyang35/backtrack
   ```
 
 

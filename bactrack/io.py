@@ -61,7 +61,7 @@ def format_output(hier_arr, n, edges):
     return mask_arr, edge_df 
 
 
-def store_output(mask_arr, edge_df, basedir):
+def store_mask_arr(mask_arr,  basedir):
     # Create directory if it doesn't exist
     if not os.path.exists(basedir):
         os.makedirs(basedir)
@@ -71,9 +71,6 @@ def store_output(mask_arr, edge_df, basedir):
         mask_image = Image.fromarray(mask, 'L')
         mask_image_path = os.path.join(basedir, f'mask_{idx}.png')
         mask_image.save(mask_image_path)
-
-    # Save DataFrame to CSV
-    edge_df.to_csv(os.path.join(basedir, 'edge_data.csv'), index=False)
 
 
 def hiers_to_df(hier_arr):
