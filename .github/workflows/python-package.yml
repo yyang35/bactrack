@@ -30,7 +30,7 @@ jobs:
         source /usr/share/miniconda/etc/profile.d/conda.sh
         conda activate bactrack
         conda list
-        pytest --cov=backtrack
+        pytest --cov=bactrack
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v2

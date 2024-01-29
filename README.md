@@ -25,10 +25,10 @@ you still need time to setup Gurobi academic license.
 
 ## Installation
 
-Feel free to chose between either conda or pip. 
-If you just need a workable version, use pip to install this package and use HiGHS would enough for you. Feel free to choose conda / pip by your preference. 
+Feel free to chose between conda or pip. 
+If you just need a workable version, use pip to install this package and use HiGHS would enough for you. Choose conda / pip by your preference. 
 
-If you require CBC/ GUROBI, especially when you want obtain fastest speed of GUROBI and ready to apply for a academic liense from [Gurobi](https://www.gurobi.com/solutions/gurobi-optimizer), you should set up conda enviroment.
+However, if you require CBC/ GUROBI solver (CBC and Gurobi need conda environment), specifically when you want obtain fastest run-time by using GUROBI and ready to apply for an academic liense from [Gurobi](https://www.gurobi.com/solutions/gurobi-optimizer), you should set up conda enviroment.
 
 - ### pip
   Install pip,  make sure pip is  installed, you can download and install it by following the instructions on the [official pip installation page](https://pip.pypa.io/en/stable/installation/).
