@@ -1,6 +1,6 @@
 import logging
 
-from scipy.optimize import milp, LinearConstraint
+from scipy.optimize import milp, LinearConstraint, Bounds
 import scipy
 import numpy as np
 
@@ -21,8 +21,9 @@ class ScipySolver(Solver):
 
 
     def solve(self):
-        res = milp(c=self.c, constraints=self.constraints, integrality=self.integrality)
-        return res.x
+        bounds = Bounds(0, 1)
+        res = milp(c=self.c, constraints=self.constraints, integrality=self.integrality, bounds=bounds)
+        return res
         
 
     def _build_mip(self):
