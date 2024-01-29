@@ -28,8 +28,10 @@ class DistanceWeight(Weight):
         kD_tree = self.kD_forest[t_target]
 
         for source_node in hier_source.all_nodes():
-            distance, index = kD_tree.query(source_node.centroid,  k = self.k)
-            for i in range(self.k):
+            num_points = len(kD_tree.data)
+            k_nearest = min(self.k, num_points) 
+            distance, index = kD_tree.query(source_node.centroid, k=k_nearest)
+            for i in range(k_nearest):
                 coord = tuple(kD_tree.data[index[i]])
                 source_index = source_node.index
                 target_index = self.centroids[coord]

@@ -91,6 +91,7 @@ def df_to_hiers(df):
     for frame in frames:
         frame_df = df[df['frame'] == frame]
         hier = Hierarchy.read_df(frame_df)
+        hier._index = tuple(hier._index)
         hier_arr.append(hier)
 
     return hier_arr

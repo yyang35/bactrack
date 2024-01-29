@@ -10,7 +10,7 @@ from .solver import Solver
 MIP_solver_logger = logging.getLogger(__name__)
 
 class MIPSolver(Solver):
-    def __init__(self, weight_matrix, hier_arr, mask_penalty = None):
+    def __init__(self, weight_matrix, hier_arr, mask_penalty = None, coverage = None, n_divide = 2):
 
         try:
             # Attempt to create a model with Gurobi as the solver
@@ -23,6 +23,8 @@ class MIPSolver(Solver):
         self.weight_matrix = weight_matrix.tocsr()
         self.seg_N = hier_arr[-1]._index[-1]
         self.mask_penalty = mask_penalty
+        self.coverage = coverage
+        self.n_divide = n_divide
         self.nodes = None
         self.edges = None
         self._build_mip()
@@ -48,7 +50,7 @@ class MIPSolver(Solver):
 
         self.nodes, self.edges = self._basic_mip()
         self._add_hierarchy_conflict()
-        self._add_coverage()
+        if self.coverage is not None: self._add_coverage()
 
         t_used = time.time() - t1
         MIP_solver_logger.info(f"MIP problem set up: time used {t_used} sec")
@@ -66,7 +68,7 @@ class MIPSolver(Solver):
         nodes = self.model.add_var_tensor((self.seg_N,), name="nodes", var_type=mip.BINARY)
         appearances = self.model.add_var_tensor((self.seg_N,), name="appear", var_type=mip.BINARY)
         disappearances = self.model.add_var_tensor((self.seg_N,), name="disappear", var_type=mip.BINARY )
-        divisions = self.model.add_var_tensor((self.seg_N,), name="division", var_type=mip.INTEGER, lb = 0)
+        divisions = self.model.add_var_tensor((self.seg_N,), name="division", var_type=mip.INTEGER, lb = 0, ub = self.n_divide - 1)
         edges = self.model.add_var_tensor((self.weight_matrix.count_nonzero(),), name="edges", var_type=mip.BINARY)
 
         self.model.objective = (
@@ -98,7 +100,8 @@ class MIPSolver(Solver):
                     self.model.add_constr(self.nodes[node.index] + self.nodes[super] <= 1)
        
 
-    def _add_coverage(self, threshold = 1):
+    def _add_coverage(self):
+        threshold = self.coverage
         coverage_arr = [0] * self.seg_N 
         for hier in self.hier_arr:
             hier.root.coverage = 1 / len(self.hier_arr)
