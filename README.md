@@ -49,6 +49,7 @@ However, if you require CBC/ GUROBI solver (which need conda environment), speci
   
   setup the enviroment and install package
   ```bash
+  cd bactrack
   conda env create -f environment.yaml
   conda activate bactrack
   pip install .
