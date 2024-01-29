@@ -71,9 +71,9 @@ However, if you require CBC/ GUROBI solver (which need conda environment), speci
   
   Also feel free to change the models, weights, solvers. Options are listed in following. (submodels options depending on which hypermodel you are choose, check [cellpose](https://www.cellpose.org/) and [omnipose](https://omnipose.readthedocs.io/) for more information what models they provide, but bactrack automically interface all those models. 
   
-    hypermodels = ['omnipose', 'cellpose']\
-    weights = ['iou_weight', 'overlap_weight', 'distance_weight']\
-    solvers = ['mip_solver', 'scipy_solver']
+    hypermodels = [omnipose, cellpose]\
+    weights = [iou_weight, overlap_weight, distance_weight]\
+    solvers = [mip_solver, scipy_solver]
 
 
 ## Gurobi setup
