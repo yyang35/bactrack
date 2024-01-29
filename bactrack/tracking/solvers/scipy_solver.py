@@ -59,7 +59,7 @@ class ScipySolver(Solver):
         # set up c in mip problem, also known as objective function coeff
 
         # node objective function coeff
-        node_obj = self.mask_penalty
+        node_obj = -1 * self.mask_penalty
         # appearence objective function coeff, penalty as long as not start frame
         appear_obj = ( node_frames != 0 ) * config.APPEAR_COST
         # disappearence objective function coeff, penalty as long as not end frame
