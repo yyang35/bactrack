@@ -35,7 +35,7 @@ However, if you require CBC/ GUROBI solver (which need conda environment), speci
   Install pip,  make sure pip is  installed, you can download and install it by following the instructions on the [official pip installation page](https://pip.pypa.io/en/stable/installation/).
   Just do pip install, the requirment package will be setup. 
   ```bash
-  pip install git+https://github.com/yyang35/bacttrack
+  pip install git+https://github.com/yyang35/bactrack
   ```
 
 - ### Conda
@@ -44,7 +44,7 @@ However, if you require CBC/ GUROBI solver (which need conda environment), speci
   
   clone this repo
   ```bash
-  git clone https://github.com/yyang35/bactrack/
+  git clone https://github.com/yyang35/bactrack.git
   ```
   
   setup the enviroment and install package
