@@ -18,7 +18,7 @@ All of these mip solver will return the same optimized global maximum result but
 CBC and Gurobi need conda environment since they are unavilable through pip. In addition, Gurobi is not an open source app, you need assign a liense to use it from their [website](https://www.gurobi.com/solutions/gurobi-optimizer), so even you setup a conda enviroment, 
 you still need time to setup Gurobi academic license. Therefore, using HiGHS (refer as ScipySolver in bactrack) is a good practice, if doesn't require extra set up, and reach relative fast run-time. 
 
-( Those tools are not directly connectted, but through Python library that interfaces solvers:  bactrack utilize [Scipy.milp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.milp.html)
+( Those tools are not directly connected, but through Python libraries which interfaces solvers: specifically, utilizes [Scipy.milp](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.milp.html)
 to connect HiGHS, and [python_mip](https://github.com/coin-or/python-mip) to connect CBC and Gurobi. So if you look at solvers name: MipSolver,ScipySolver, it might be a little confusing)
 
 
@@ -27,7 +27,7 @@ to connect HiGHS, and [python_mip](https://github.com/coin-or/python-mip) to con
 
 Feel free to chose between conda or pip. 
 
-If you only need a workable version, use pip to install this package and use HiGHS would enough for you. 
+If you only need a workable version, use pip to install bactrack and use HiGHS would enough for you. 
 
 However, if you require CBC/ GUROBI solver (which need conda environment), specifically when you want obtain fastest run-time by using GUROBI and ready to apply for an academic liense from [Gurobi](https://www.gurobi.com/solutions/gurobi-optimizer), you should set up conda enviroment.
 
