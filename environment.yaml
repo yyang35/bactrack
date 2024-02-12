@@ -16,7 +16,6 @@ dependencies:
   - tqdm
   - psutil
   - scipy
+  - omnipose
   - pip:
     - git+https://github.com/suzhenyu22/python-mip@dev
-    - git+https://github.com/yyang35/omnipose
-

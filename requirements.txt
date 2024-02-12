@@ -1,6 +1,5 @@
 cellpose>=2.2.3
-#omnipose>=1.0.6
-git+https://github.com/yyang35/omnipose
+omnipose
 mip
 numpy
 pandas
