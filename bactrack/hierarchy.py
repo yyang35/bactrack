@@ -160,7 +160,8 @@ class Hierarchy:
                 mask  = np.zeros(node.shape)
                 mask[sub_coords[:, 0], sub_coords[:, 1]] = 1
                 labeled_mask, num_features = measure.label(mask, connectivity=1, return_num=True)
-                if num_features > 1:
+                
+                if num_features > 1: # this mask is not connected, we only keep the largest one
                     component_sizes = [np.sum(labeled_mask == label) for label in range(1, num_features + 1)]
                     largest_component_label = np.argmax(component_sizes) + 1  # Add 1 to match label indices
                     largest_component_mask = (labeled_mask == largest_component_label)

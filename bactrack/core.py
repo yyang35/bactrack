@@ -111,18 +111,18 @@ def run_tracking(hier_arr, solver_name = "scipy_solver", weight_name = "overlap_
     
 
 def run_postprocess(hier_arr, n, edges):
-    from .io import format_output, store_output
+    from .io import format_output
     mask_arr, edge_df  = format_output(hier_arr, n, edges)
     return mask_arr, edge_df
 
 
 def compute_masks(flow):
 
-    from .segementation import computer_hierarchy
+    from .segementation import compute_hierarchy
 
     [RGB_dP, dP, cellprob, p, bd, tr, affinity, bounds] = flow
     dP, cellprob = dP.squeeze(), cellprob.squeeze()
-    hier = computer_hierarchy(cellprob, dP)
+    hier = compute_hierarchy(cellprob, dP)
 
     return hier
 
