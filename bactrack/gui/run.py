@@ -11,14 +11,23 @@ import visualizer
 import numpy as np
 from cellpose_omni import io as omni_io
 from bactrack.core import ModelEnum
+import os
 
 
 def run_track(path):
+    print("Running tracking on", path)
+
+    seg_file = path + ".segmentation.pkl"
     
-    images = io.load(path, omni_io)
-    hier_arr = core.compute_hierarchy(images,hypermodel=ModelEnum.OMNIPOSE, submodel= 'bact_phase_omni')
-    nodes, edges = core.run_tracking(hier_arr)
-    mask_arr, edge_df = core.run_postprocess(hier_arr, nodes, edges)
+    if os.path.exists( seg_file):
+        hier_arr = pd.read_pickle(seg_file)
+    else:
+        images = io.load(path, omni_io)
+        hier_arr = core.compute_hierarchy(images,hypermodel=ModelEnum.OMNIPOSE, submodel= 'bact_phase_omni')
+        pd.to_pickle(hier_arr, seg_file)
+
+    nodes, edges = core.run_tracking(hier_arr, solver_name = 'mip_solver')
+    mask_arr, edge_df = io.format_output(hier_arr, nodes, edges)
     hier_df = io.hiers_to_df(hier_arr)
 
     merged_df = pd.merge(edge_df, hier_df.add_suffix('_source'), left_on='Source Index', right_on='index_source', how='left')
@@ -33,10 +42,18 @@ def run_track(path):
         cells.add(Cell(polygon = polygon, label = row['index'], frame=row['frame']))
 
     composer =  LinkComposer(cells=cells)
-    composer.phase_folder = path
+    composer.phase_folder = path + '*.tif'
     G = composer.make_new_dircted_graph()
 
     for index, row in merged_df.iterrows():
-        composer.link(G, Cell(label = row['Source Index'], frame = row['frame_source']), Cell(label = row['Target Index'], frame = row['frame_target'])) 
+        #G.add_edge(Cell(label = row['Source Index'], frame = row['frame_source']), Cell(label = row['Target Index'], frame = row['frame_target']))
+        try:
+            composer.link(G, Cell(label = row['Source Index'], frame = row['frame_source']), Cell(label = row['Target Index'], frame = row['frame_target'])) 
+        except:
+            print(f"Cannot link {row['Source Index']} to {row['Target Index']}")
 
-    visualizer.quick_lineage(G)
+    
+    #visualizer.quick_lineage(G)
+    return composer, G
+
+

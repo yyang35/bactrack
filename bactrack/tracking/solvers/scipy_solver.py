@@ -34,6 +34,7 @@ class ScipySolver(Solver):
         e_matrix = dok_matrix(self.weight_matrix.shape)
         rows, cols = self.weight_matrix.nonzero() 
         for i in np.where(edge_list == 1)[0]:
+            #assert node_list[rows[i]] == 1 and node_list[cols[i]] == 1, "Edge should have a start node"
             e_matrix[rows[i], cols[i]] = 1
 
         n = np.where(node_list == 1)[0]
@@ -51,10 +52,12 @@ class ScipySolver(Solver):
 
         # node_frames in format [0,0,0,0,1,1,1,1,2,2,2,2,]
         # it's node index to node frame list
-        # e.g 5th segementation candidates came from the frame 1, and 4 sege in frame 1
         node_frames = np.array([node.frame for hier in self.hier_arr for node in hier.all_nodes()])
         assert len(node_frames) == self.seg_N, \
             "node's frames info list should have a length of total segementation candidates"
+        
+        assert len(self.mask_penalty) == self.seg_N, \
+            "Mask penalty should have a length of total segementation candidates"
 
         # set up c in mip problem, also known as objective function coeff
 
@@ -65,7 +68,7 @@ class ScipySolver(Solver):
         # disappearence objective function coeff, penalty as long as not end frame
         disappear_obj = (node_frames != np.max(node_frames)) * config.DISAPPEAR_COST
         # dividsion objective function coeff
-        division_obj = np.ones(len(node_frames)) * config.DIVISION_COST 
+        division_obj = np.ones(self.seg_N) * config.DIVISION_COST 
         # edge objective function coeff
         # weight_matrix store edge in: weight_matrix.nonzero() = rows, cols and weight_matrix.data
         # this means: an edge come from rows[i] to cols[i] have an weight data[i]
@@ -81,10 +84,12 @@ class ScipySolver(Solver):
             return ['NODE','APPEAR', 'DISAPPEAR', 'DIVISION', 'EDGE'].index(type) * self.seg_N + offset
 
         rows, cols = self.weight_matrix.nonzero() 
+        assert len(rows) == len(cols) == len(self.weight_matrix.data), "Weight matrix should have same length of rows, cols and data"
         A, b_lb, b_ub = [], [], []
 
         # set constrain part, which is the A, b part of 
         for i in range(self.seg_N):
+            # the indices below are unique zip edges indices
             target_indices = np.where(rows == i)[0]
             source_indices = np.where(cols == i)[0]
 
@@ -109,15 +114,28 @@ class ScipySolver(Solver):
 
             # A_ii for capcity constain
             # sum(in_edge) + appear <= 1
-            A_ii = np.zeros(len(c))
+            A_in = np.zeros(len(c))
             for source_index in source_indices:
-                A_ii[_index('EDGE', source_index)] = 1
+                A_in[_index('EDGE', source_index)] = 1
 
-            A_ii[_index('APPEAR', i)] = 1
-            A_ii[_index('NODE', i)] = -1
+            A_in[_index('APPEAR', i)] = 1
+            A_in[_index('NODE', i)] = -1
 
-            A.append(A_ii)
+            A.append(A_in)
             b_lb.append(0)
+            b_ub.append(0)
+
+            # A_ii for capcity constain
+            # sum(in_edge) + appear <= 1
+            A_out = np.zeros(len(c))
+            for target_index in target_indices:
+                A_out[_index('EDGE', target_index)] = 1
+
+            A_out[_index('DISAPPEAR', i)] = 1
+            A_out[_index('NODE', i)] = -1 * max(len(target_indices),1)
+
+            A.append(A_out)
+            b_lb.append(-np.inf)
             b_ub.append(0)
 
         # set constrain part, set the constrain on hierachy conflict
@@ -129,7 +147,7 @@ class ScipySolver(Solver):
                     A_i[_index('NODE', super)] = 1
                     
                 A.append(A_i)
-                b_lb.append(0)
+                b_lb.append(-np.inf)
                 b_ub.append(1)
 
         

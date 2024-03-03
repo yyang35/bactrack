@@ -1,18 +1,16 @@
 import glob
-import matplotlib.pyplot as plt
-from PIL import Image
-import numpy as np
 import re
+import warnings
+
 import cv2
 from matplotlib.patches import Polygon as pltPolygon
+import matplotlib.pyplot as plt
+from PIL import Image
 import pandas as pd
 from natsort import natsorted
-import warnings
 from shapely.geometry import Polygon, LineString
-
 from PIL import Image
 import numpy as np
-
 
 from cell import Cell
 
@@ -56,7 +54,6 @@ def read_tiff_in_folder(phase_folder, frame):
     # Normalize the image to increase contrast, if possible
     min_val = np.min(image)
     max_val = np.max(image)
-
 
     image = image.astype(np.float32)
     normalized_image = (image - min_val) / (max_val - min_val) * 255

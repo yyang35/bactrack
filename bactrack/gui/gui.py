@@ -4,6 +4,7 @@ from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QFileDialog
 import numpy as np
 import cv2
+from viz import Viz
 
 from run import run_track
 
@@ -70,12 +71,12 @@ class MainWindow(QMainWindow):
             event.acceptProposedAction()
 
     def dropEvent(self, event):
-        print("Dropped")
         urls = event.mimeData().urls()
         if urls:
             folder_path = urls[0].toLocalFile()
-            run_track(folder_path)
-            self.load_images_from_folder(folder_path)
+            composer, G = run_track(folder_path)
+            Viz(composer, G)
+
 
 if __name__ == "__main__":
     app = QApplication([])

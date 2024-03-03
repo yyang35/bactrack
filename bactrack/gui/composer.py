@@ -93,7 +93,7 @@ class LinkComposer:
 
     # show error mask on extracting cells
     def show_mask_error(self):
-        from . import visualizer
+        import visualizer
         if hasattr(self, 'mask_tif'):
             masks = extractor.read_tiff_sequence(self.phase_tif)
         elif hasattr(self, 'mask_folder'):
@@ -106,7 +106,7 @@ class LinkComposer:
 
 
     def show_frame_phase(self, G, frame, info = None, **kwargs):
-        from . import visualizer
+        import visualizer
         this_frame_cells = self.cells_frame_dict[frame]
         connected_cells,_  = visualizer.get_connected_edges_cells(G, this_frame_cells)
         info = visualizer.get_label_info(G, list(connected_cells.union(this_frame_cells)), alphabet_label=True) if info is None else info
@@ -115,7 +115,7 @@ class LinkComposer:
         
     
     def get_single_frame_phase(self, frame):
-        from . import visualizer
+        import visualizer
         if hasattr(self, 'phase_tif'):
             image = extractor.read_tiff_frame_like_cv2(self.phase_tif, frame)
         elif hasattr(self, 'phase_folder'):
