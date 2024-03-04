@@ -103,7 +103,9 @@ def run_tracking(hier_arr, solver_name = "scipy_solver", weight_name = "overlap_
          raise ValueError(f"Weight '{weight_name}' not found")
     
     weight = Weight(hier_arr, **kwargs)
-    solver = Solver(weight.weight_matrix, hier_arr, mask_penalty = weight.mask_penalty)
+    #solver = Solver(weight.weight_matrix, hier_arr, mask_penalty = weight.mask_penalty)
+    print("no mask_penalty")
+    solver = Solver(weight.weight_matrix, hier_arr)
     nodes, edges = solver.solve()
 
     return nodes, edges

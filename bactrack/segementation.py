@@ -20,13 +20,13 @@ import time
 def get_niter_range(cellprob, ndim, precison = 1):
     """Get the Euler integration range of segementation hierarchy"""
     
-    min = 0
+    min = 1
     # the niter omnipose used, should be the proper niter
     mid = int(2 * (ndim + 1) * np.mean(cellprob[cellprob > 0]))
     max = int(2 * (ndim + 1) * np.max(cellprob[cellprob > 0]))
 
     n = precison + 2
-    return np.unique(np.concatenate((np.linspace(min, mid, n), np.linspace(mid, max, n), np.linspace(max, max*10, n)))).astype(int) 
+    return np.unique(np.concatenate((np.linspace(min, mid, n), np.linspace(mid, max, n)))).astype(int) 
 
 
 def compute_hierarchy(cellprob,dP):
@@ -57,7 +57,7 @@ def compute_hierarchy(cellprob,dP):
 
     # iteration to computer segementation hierarchy
     # every itereation do sub-segementation inside previous segementation
-    for t in range(np.max(niters) + 1):
+    for t in range(np.max(niters)):
         current_coords = step(p_norm_torch, dP_norm_torch, shape)
         if t in niters:
             hier = put_segement(current_coords, hier, remove_small_masks = True)
