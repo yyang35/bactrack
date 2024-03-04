@@ -59,8 +59,8 @@ def compute_hierarchy(cellprob,dP):
 
     # iteration to computer segementation hierarchy
     # every itereation do sub-segementation inside previous segementation
+    current_coords = coords
     for t in range(np.max(niters) + 1):
-        current_coords = step(p_norm_torch, dP_norm_torch, shape)
         if t in niters:
             print(f"iter {t}")
             hier = put_segement(current_coords, hier, remove_small_masks = True)
@@ -74,6 +74,8 @@ def compute_hierarchy(cellprob,dP):
                 node.label = label
                 label += 1
             mask_t.append(mask)
+
+        current_coords = step(p_norm_torch, dP_norm_torch, shape)
             #
             
 
@@ -89,7 +91,7 @@ def step( pt, dP, shape):
     # add shiftted displacement to original location, clamp outsider back to [-1,1]
     # pt(the normalized version coordiante) is update in func, eventhough it never be returned
     for k in range(len(shape)):
-        pt[:,:,:,k] = torch.clamp(pt[:,:,:,k] + dPt[:,k,:,:], -1., 1.)
+        pt[:,:,:,k] = torch.clamp(pt[:,:,:,k] + 0.1 * dPt[:,k,:,:], -1., 1.)
 
     return _denormalize(pt,shape).squeeze().numpy()
 
