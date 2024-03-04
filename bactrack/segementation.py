@@ -26,7 +26,7 @@ def get_niter_range(cellprob, ndim, precison = 1):
     max = int(2 * (ndim + 1) * np.max(cellprob[cellprob > 0]))
 
     n = precison + 2
-    return np.unique(np.concatenate((np.linspace(min, mid, n), np.linspace(mid, max, n)))).astype(int) 
+    return np.unique(np.concatenate(([0], np.linspace(min, mid, n), np.linspace(mid, max, n)))).astype(int) 
 
 
 def compute_hierarchy(cellprob,dP):
@@ -54,6 +54,7 @@ def compute_hierarchy(cellprob,dP):
     hier = Hierarchy(Node(list(range(coords.shape[0])))) 
     hier.root.shape = cellprob.shape
 
+    print(niters)
 
     # iteration to computer segementation hierarchy
     # every itereation do sub-segementation inside previous segementation

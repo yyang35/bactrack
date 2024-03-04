@@ -82,9 +82,6 @@ class MIPSolver(Solver):
         for hier in self.hier_arr:
             for node in hier.all_nodes():
                 area[node.index] = node.area
-
-        print("area array")
-        print(area)
         
         # set constrain 
         rows, cols = self.weight_matrix.nonzero() 
