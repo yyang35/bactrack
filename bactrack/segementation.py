@@ -26,7 +26,7 @@ def get_niter_range(cellprob, ndim, precison = 1):
     max = int(2 * (ndim + 1) * np.max(cellprob[cellprob > 0]))
 
     n = precison + 2
-    return np.unique(np.concatenate(([0], np.linspace(min, mid, n), np.linspace(mid, max, n)))).astype(int) 
+    return np.unique(np.concatenate(([0, 1, 2], np.linspace(min, mid, n), np.linspace(mid, max, n)))).astype(int) 
 
 
 def compute_hierarchy(cellprob,dP):
@@ -59,7 +59,11 @@ def compute_hierarchy(cellprob,dP):
     # iteration to computer segementation hierarchy
     # every itereation do sub-segementation inside previous segementation
     for t in range(np.max(niters)):
-        current_coords = step(p_norm_torch, dP_norm_torch, shape)
+        if t < 10:
+            current_coords = step(p_norm_torch, dP_norm_torch, shape, width = 0.1)
+        else:
+            current_coords = step(p_norm_torch, dP_norm_torch, shape)
+
         if t in niters:
             hier = put_segement(current_coords, hier, remove_small_masks = True)
             
@@ -68,20 +72,20 @@ def compute_hierarchy(cellprob,dP):
     return hier
 
 
-def step( pt, dP, shape):
+def step( pt, dP, shape, width = 1.0):
     """Single step of Euler integration of dynamics dP"""
     # calculate the position shift by following flow, func require coordinate in [-1, 1]
     dPt = torch.nn.functional.grid_sample(dP, pt, mode = "nearest", align_corners=False)
     # add shiftted displacement to original location, clamp outsider back to [-1,1]
     # pt(the normalized version coordiante) is update in func, eventhough it never be returned
     for k in range(len(shape)):
-        pt[:,:,:,k] = torch.clamp(pt[:,:,:,k] + dPt[:,k,:,:], -1., 1.)
+        pt[:,:,:,k] = torch.clamp(pt[:,:,:,k] + width * dPt[:,k,:,:], -1., 1.)
 
     return _denormalize(pt,shape).squeeze().numpy()
 
 
 def _normalize(pt, dP, shape):
-    """Normalize grid and input to [-1,1]"""
+    """Normalize grid and input to [-1,1]""" 
     shape =  np.array(shape)[[1,0]].astype('float')-1
     pt_ = pt.clone()
     dP_ = dP.clone()
