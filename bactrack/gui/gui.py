@@ -12,35 +12,21 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Image Viewer")
+        self.setWindowTitle("Backtrack")
         self.layout = QVBoxLayout()
 
         self.label = QLabel()
         self.layout.addWidget(self.label)
 
-        self.prev_button = QPushButton("Previous")
-        self.prev_button.clicked.connect(self.show_previous_image)
-        self.layout.addWidget(self.prev_button)
-
-        self.next_button = QPushButton("Next")
-        self.next_button.clicked.connect(self.show_next_image)
-        self.layout.addWidget(self.next_button)
+        self.drag_label = QLabel("Drag Folder here")
+        self.drag_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(self.drag_label)
 
         self.setCentralWidget(QWidget(self))
         self.centralWidget().setLayout(self.layout)
 
         self.images = []
         self.current_image_index = 0
-
-    def show_previous_image(self):
-        if self.current_image_index > 0:
-            self.current_image_index -= 1
-            self.show_image()
-
-    def show_next_image(self):
-        if self.current_image_index < len(self.images) - 1:
-            self.current_image_index += 1
-            self.show_image()
 
     def show_image(self):
         image = self.images[self.current_image_index]
