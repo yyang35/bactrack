@@ -5,6 +5,7 @@ from PyQt6.QtCore import Qt, QSize, QObject, QEvent, pyqtSignal, QThread
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QPlainTextEdit,
                              QHBoxLayout, QComboBox, QPushButton, QTextEdit, QScrollBar, QLabel, QStackedWidget, QSplitter)
 
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 import threading
 from run import run_track
@@ -96,6 +97,7 @@ class MyMainWindow(QMainWindow):
 
         self.main_canvas = QStackedWidget()
         self.track_timelapse_canvas = Viz(self)
+        self.toolbar = NavigationToolbar(self.track_timelapse_canvas, self)
 
         self.lineage = Lineage()
 
@@ -151,6 +153,7 @@ class MyMainWindow(QMainWindow):
 
         
         # Right layout construction
+        right_layout.addWidget(self.toolbar, 0.5)
         right_layout.addWidget(self.main_canvas, 5)
         right_layout.addWidget(self.scrollbar, 1) # Placeholder for the scrollbar
         right_layout.addWidget(self.terminal, 1)

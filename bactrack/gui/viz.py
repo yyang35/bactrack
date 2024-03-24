@@ -47,9 +47,6 @@ class Viz(FigureCanvasQTAgg):
         self.label_style_index = 0
         self.max_frame = composer.frame_num - 1
 
-        self.ax = self.fig.add_subplot(111)  
-        self.ax.set_facecolor('none')  
-
         label_info_1 = visualizer.get_label_info(G)
         label_info_2 = visualizer.get_generation_label_info(G)
         self.labels = [label_info_1, label_info_2]
@@ -112,7 +109,7 @@ class Viz(FigureCanvasQTAgg):
 
     def reset_zoom(self):
         """Reset the zoom level to the original xlim and ylim."""
-        
+
         self.ax.set_xlim(self.original_xlim)
         self.ax.set_ylim(self.original_ylim)
         self.fig.canvas.draw_idle()
