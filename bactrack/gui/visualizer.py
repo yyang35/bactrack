@@ -504,8 +504,8 @@ def subplot_single_frame_phase(ax, image, cells_frame_dict, info, frame,  **kwar
                     ax.text(centroid_x, centroid_y, str(label), color='white', fontweight='bold', fontsize=fontsize, horizontalalignment='center', verticalalignment='center')
 
     # Optionally, set the axis limits based on the image size
-    #ax.set_xlim(0, image.shape[1])
-    #ax.set_ylim(image.shape[0], 0)
+    ax.set_xlim(0, image.shape[1])
+    ax.set_ylim(image.shape[0], 0)
 
     ax.set_axis_off()
     ax.set_frame_on(False)

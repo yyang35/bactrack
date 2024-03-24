@@ -12,7 +12,7 @@ import numpy as np
 from cellpose_omni import io as omni_io
 from bactrack.core import ModelEnum
 import os
-
+import logging
 
 def run_track(path):
     print("Running tracking on", path)
@@ -52,7 +52,7 @@ def run_track(path):
         except:
             print(f"Cannot link {row['Source Index']} to {row['Target Index']}")
 
-    
+    logging.info(f"Tracking completed: {len(G.nodes)} IOU tracked")
     #visualizer.quick_lineage(G)
     return composer, G
 

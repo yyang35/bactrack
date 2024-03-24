@@ -13,6 +13,7 @@ from viz import Viz
 import logging
 from lineage import Lineage
 from visualizer import get_graph_stats_text
+import logging
 
         
 class StreamRedirect(QObject):
@@ -82,16 +83,25 @@ class MyMainWindow(QMainWindow):
         sys.stdout = self.stream_redirect
 
         # Redirect logging
-        log_handler = QTextEditLogger()
+
+        log_handler = QTextEditLogger()  # Create your custom handler
+        log_handler.setLevel(logging.INFO)
+        log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+        root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
+        root_logger.addHandler(log_handler)
+
+
         log_handler.emit_log.connect(self.log_to_terminal)
-        logging.basicConfig(level=logging.DEBUG, handlers=[log_handler])
 
 
         # Preparing all wigets
         self.type_dropdown = QComboBox()
         self.model_dropdown = QComboBox()
         self.run_button = QPushButton('Run Tracking')
-        self.reset_button = QPushButton('Reset zoom')
+        self.reset_button = QPushButton('Reset Zoom')
+        self.save_button = QPushButton('Save Result')
         self.toggle_button = ToggleButton(self)
         self.scrollbar = QScrollBar(Qt.Orientation.Horizontal)
 
@@ -153,7 +163,7 @@ class MyMainWindow(QMainWindow):
 
         
         # Right layout construction
-        right_layout.addWidget(self.toolbar, 0.5)
+        right_layout.addWidget(self.toolbar, 1)
         right_layout.addWidget(self.main_canvas, 5)
         right_layout.addWidget(self.scrollbar, 1) # Placeholder for the scrollbar
         right_layout.addWidget(self.terminal, 1)
@@ -198,7 +208,7 @@ class MyMainWindow(QMainWindow):
         self.show()
 
     def log_to_terminal(self, message):
-        self.terminal.insertPlainText(message)
+        self.terminal.insertPlainText(message + '\n') 
         self.terminal.ensureCursorVisible()
     
 
@@ -212,7 +222,7 @@ class MyMainWindow(QMainWindow):
 
     def dropEvent(self, event):
         urls = event.mimeData().urls()
-        print(f"{urls} dropped")
+        logging.info(f"{urls} dropped")
         if urls:
             folder_path = urls[0].toLocalFile()
 
@@ -250,7 +260,7 @@ class MyMainWindow(QMainWindow):
 
     def on_track_error(self, error):
         QApplication.restoreOverrideCursor()  # Restore the cursor
-        print(f"Error: {error}")  # Handle the error (e.g., show a message box)
+        logging.info(f"Error: {error}")  # Handle the error (e.g., show a message box)
 
     def updateFrameView(self, value):
         self.frame = value
