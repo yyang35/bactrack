@@ -1,5 +1,5 @@
 cellpose>=2.2.3
-omnipose
+omnipose>=1.0.6
 mip
 numpy
 pandas

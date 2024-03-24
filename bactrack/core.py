@@ -110,13 +110,6 @@ def run_tracking(hier_arr, solver_name = "scipy_solver", weight_name = "overlap_
 
     return nodes, edges
 
-    
-
-def run_postprocess(hier_arr, n, edges):
-    from .io import format_output
-    mask_arr, edge_df  = format_output(hier_arr, n, edges)
-    return mask_arr, edge_df
-
 
 def compute_masks(flow):
 

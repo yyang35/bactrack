@@ -5,7 +5,6 @@ import pandas as pd
 
 @pytest.fixture(scope='session')
 def compute_result():
-    # ... your setup code for hier_arr ...
     diameter = 30
     radius = diameter // 2
     Y, X = np.ogrid[:diameter, :diameter]
