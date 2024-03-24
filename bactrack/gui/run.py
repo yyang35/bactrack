@@ -53,7 +53,6 @@ def run_track(path):
             print(f"Cannot link {row['Source Index']} to {row['Target Index']}")
 
     logging.info(f"Tracking completed: {len(G.nodes)} IOU tracked")
-    #visualizer.quick_lineage(G)
     return composer, G
 
 

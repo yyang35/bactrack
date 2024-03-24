@@ -106,6 +106,7 @@ class MyMainWindow(QMainWindow):
         self.scrollbar = QScrollBar(Qt.Orientation.Horizontal)
 
         self.main_canvas = QStackedWidget()
+        self.raw_image = RawImage(self)
         self.track_timelapse_canvas = Viz(self)
         self.toolbar = NavigationToolbar(self.track_timelapse_canvas, self)
 
@@ -137,6 +138,7 @@ class MyMainWindow(QMainWindow):
         left_layout.addWidget(self.toggle_button)
         left_layout.addWidget(self.reset_button)
         left_layout.addWidget(self.run_button)
+        left_layout.addWidget(self.save_button)
         left_layout.addStretch(1) 
 
         #  ================== Right vertical section ================
@@ -283,6 +285,18 @@ class MyMainWindow(QMainWindow):
             return  
         
         self.track_timelapse_canvas.update_plot(self)
+
+    def save_result(self):
+        options = QFileDialog.Options()
+        # Set the default file type filter
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()", "","CSV Files (*.csv);;All Files (*)", options=options)
+        if fileName:
+            print("File path:", fileName)
+            # Example DataFrame
+            df = pd.DataFrame({'Name': ['John', 'Anna'], 'Age': [28, 22]})
+            # Save DataFrame to the selected file path
+        df.to_csv(fileName, index=False)
 
 
 def main():
