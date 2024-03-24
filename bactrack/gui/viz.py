@@ -13,6 +13,10 @@ import composer
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
+from PyQt6.QtWidgets import QSizePolicy
+from PyQt6.QtGui import QPalette, QColor
+from PyQt6.QtCore import Qt
+
 
 class Viz(FigureCanvasQTAgg):
 
@@ -21,8 +25,20 @@ class Viz(FigureCanvasQTAgg):
         self.ax = self.fig.add_subplot(111)
         self.ax.set_axis_off()
         self.ax.axis('off')
-        super(Viz, self).__init__(self.fig)
         
+        super(Viz, self).__init__(self.fig)
+
+        self.ax.set_facecolor('none')
+        self.fig.patch.set_facecolor('none')
+        
+        # Set the Qt widget's palette to transparent
+        palette = self.palette()
+        palette.setColor(QPalette.Window, QColor(0, 0, 0, 0))
+        self.setPalette(palette)
+
+        # Set the background of the QWidget which contains the canvas to transparent
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
 
     def run(self, composer, G):
         self.composer = composer
@@ -31,10 +47,8 @@ class Viz(FigureCanvasQTAgg):
         self.label_style_index = 0
         self.max_frame = composer.frame_num - 1
 
-        plt.close('all')
-        plt.ioff()
-        
-        #self.fig.tight_layout()
+        self.ax = self.fig.add_subplot(111)  
+        self.ax.set_facecolor('none')  
 
         label_info_1 = visualizer.get_label_info(G)
         label_info_2 = visualizer.get_generation_label_info(G)
@@ -62,12 +76,15 @@ class Viz(FigureCanvasQTAgg):
         # Assuming visualizer, composer, and G are defined
         # Create the initial plot
         # Update plot function
-
         label_info = self.labels[main_window.label_index]
         label_style = self.label_styles[main_window.style_index]
 
         xlim = self.ax.get_xlim()
         ylim = self.ax.get_ylim()
+
+        self.fig.clf()
+        self.ax = self.fig.add_subplot(111)  
+        self.ax.set_facecolor('none')  
         
         self.ax.clear()
         image = self.composer.get_single_frame_phase(main_window.frame)
@@ -86,12 +103,16 @@ class Viz(FigureCanvasQTAgg):
         self.ax.set_ylim(ylim)
         #self.ax.set_title(f"Frame: {self.frame}", weight = 600) 
 
+        self.ax.set_facecolor('none')
+        self.fig.patch.set_facecolor('none')
+
         disconnect_zoom = zoom_factory(self.ax)
         self.fig.canvas.draw_idle()
         
 
     def reset_zoom(self):
         """Reset the zoom level to the original xlim and ylim."""
+        
         self.ax.set_xlim(self.original_xlim)
         self.ax.set_ylim(self.original_ylim)
         self.fig.canvas.draw_idle()
