@@ -1,67 +1,64 @@
-import os
+from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QImage, QPixmap
-from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget, QPushButton, QFileDialog
-import numpy as np
-import cv2
-from viz import Viz
-
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from viz import Viz 
 from run import run_track
+
+# from your_viz_module import Viz
+# from your_tracking_module import run_track
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
         self.setWindowTitle("Backtrack")
-        self.layout = QVBoxLayout()
+        self.setGeometry(100, 100, 800, 600)  # Adjust size as needed
 
-        self.label = QLabel()
-        self.layout.addWidget(self.label)
+        self.main_widget = QWidget(self)
+        self.setCentralWidget(self.main_widget)
+        self.layout = QVBoxLayout(self.main_widget)
 
-        self.drag_label = QLabel("Drag Folder here")
+        self.drag_label = QLabel("Drag Folder Here")
         self.drag_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.drag_label)
 
-        self.setCentralWidget(QWidget(self))
-        self.centralWidget().setLayout(self.layout)
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.layout.addWidget(self.canvas)
+        self.viz = None
 
-        self.images = []
-        self.current_image_index = 0
 
-    def show_image(self):
-        image = self.images[self.current_image_index]
-        height, width = image.shape
-        bytes_per_line =  width
-        q_image = QImage(image.data, width, height, bytes_per_line, QImage.Format_RGB888)
-        pixmap = QPixmap.fromImage(q_image)
-        self.label.setPixmap(pixmap.scaled(self.label.size(), Qt.AspectRatioMode.KeepAspectRatio))
+    def init_viz(self, composer, G):
+        # Remove placeholder label if it exists
+        if self.drag_label:
+            self.drag_label.deleteLater()
+            self.drag_label = None
 
-        
-        import matplotlib.pyplot as plt
-        plt.imshow(self.images[self.current_image_index], cmap='gray')
-        plt.show()
+        # Initialize Viz with the existing figure
+        if self.viz is None:
+            self.viz = Viz(composer, G, self.figure)
+        else:
+            # If viz already exists, just update it
+            self.viz.update_plot()
 
-    def load_images_from_folder(self, folder_path):
-        print("Loading images from folder", folder_path)
+        self.canvas.show()
+        self.canvas.draw_idle()
 
-        import cellpose_omni.io as omni_io
-        from bactrack import io
-
-        self.images = io.load(folder_path, omni_io)
-
-        if self.images:
-            self.show_image()
-
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasUrls():
-            event.acceptProposedAction()
 
     def dropEvent(self, event):
         urls = event.mimeData().urls()
         if urls:
             folder_path = urls[0].toLocalFile()
+            # You need to define how you obtain `composer` and `G` from the folder_path
+            # This might involve calling a function similar to run_track(folder_path)
+            # Assuming run_track returns `composer` and `G`
             composer, G = run_track(folder_path)
-            Viz(composer, G)
+            self.init_viz(composer, G)
+            self.canvas.draw_idle() 
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
 
 
 if __name__ == "__main__":

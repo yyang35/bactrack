@@ -10,91 +10,88 @@ from visualizer import CELL_EVENT_COLOR
 import visualizer
 import composer
 
-class Viz:
-    def __init__(self, composer, G):
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
+
+
+class Viz(FigureCanvasQTAgg):
+
+    def __init__(self, parent=None, dpi=100):
+        self.fig = Figure(dpi=dpi)
+        self.ax = self.fig.add_subplot(111)
+        self.ax.set_axis_off()
+        self.ax.axis('off')
+        super(Viz, self).__init__(self.fig)
+        
+
+    def run(self, composer, G):
         self.composer = composer
         self.G = G
         self.label_info_index = 0
         self.label_style_index = 0
-        self.frame = 0
         self.max_frame = composer.frame_num - 1
 
         plt.close('all')
         plt.ioff()
-        #matplotlib.use('TkAgg')  # Make sure this backend is compatible with your environment
-
-        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(20, 10), gridspec_kw={'width_ratios': [5, 2]})
-        self.fig.tight_layout()
+        
+        #self.fig.tight_layout()
 
         label_info_1 = visualizer.get_label_info(G)
         label_info_2 = visualizer.get_generation_label_info(G)
         self.labels = [label_info_1, label_info_2]
 
-        tag = visualizer.tag_type(G)
-        pos = visualizer.get_lineage_pos(G)
-
         label_info = self.labels[self.label_info_index]
         self.label_styles = ["regular", "circled", "empty"]
         self.label_style = self.label_styles[self.label_style_index]
+  
+        image = self.composer.get_single_frame_phase(frame = 0)
+        self.ax = visualizer.subplot_single_frame_phase(ax=self.ax, G=G, image=image, cells_frame_dict=composer.cells_frame_dict, label_style  = self.label_style, frame=0, info=label_info, fontsize=7, representative_point=True)
 
-        cells_s = {CELL_EVENT_COLOR[CellEvent.BIRTH]: tag[CellEvent.BIRTH], CELL_EVENT_COLOR[CellEvent.DIE]: tag[CellEvent.DIE]}
-        edges_s = {CELL_EVENT_COLOR[CellEvent.SPLIT]: tag[CellEvent.SPLIT], CELL_EVENT_COLOR[CellEvent.MERGE]: tag[CellEvent.MERGE]}
-                
-        image = self.composer.get_single_frame_phase(self.frame)
-        self.ax1 = visualizer.subplot_single_frame_phase(ax=self.ax1, G=G, image=image, cells_frame_dict=composer.cells_frame_dict, label_style  = self.label_style, frame=self.frame, info=label_info, fontsize=7, figsize=(15,15), representative_point=True)
-        self.ax1.set_title(f"Frame: {self.frame}", weight = 600) 
+        self.original_xlim = self.ax.get_xlim()
+        self.original_ylim = self.ax.get_ylim()
+        self.fig.subplots_adjust(left=0, right=1, top=1, bottom=0) 
 
-        self.ax2 = visualizer.subplot_lineage(self.ax2, G, pos, with_background=True, nodes_special=cells_s, edges_special=edges_s)
-        self.ax2.set_axis_off()
-        disconnect_zoom = zoom_factory(self.ax1)
+        #self.ax.set_title(f"Frame: {self.frame}", weight = 600) 
+        self.ax.set_axis_off()
 
-        self.fig.canvas.mpl_connect('key_press_event', lambda event: self.on_key(event))
-        plt.show()
-
+        disconnect_zoom = zoom_factory(self.ax)
+        self.fig.canvas.draw()
 
 
-    def update_plot(self):
+    def update_plot(self, main_window):
         # Assuming visualizer, composer, and G are defined
         # Create the initial plot
         # Update plot function
 
-        label_info = self.labels[self.label_info_index]
-        label_style = self.label_styles[self.label_style_index]
+        label_info = self.labels[main_window.label_index]
+        label_style = self.label_styles[main_window.style_index]
 
-        xlim = self.ax1.get_xlim()
-        ylim = self.ax1.get_ylim()
+        xlim = self.ax.get_xlim()
+        ylim = self.ax.get_ylim()
         
-        self.ax1.clear()
-        image = self.composer.get_single_frame_phase(self.frame)
-        self.ax1 = visualizer.subplot_single_frame_phase(
-            ax=self.ax1, 
+        self.ax.clear()
+        image = self.composer.get_single_frame_phase(main_window.frame)
+        self.ax = visualizer.subplot_single_frame_phase(
+            ax=self.ax, 
             G=self.G, 
             image=image, 
             cells_frame_dict=self.composer.cells_frame_dict, 
             label_style  = label_style, 
-            frame=self.frame, 
+            frame=main_window.frame, 
             info=label_info, 
             fontsize=7, 
-            figsize=(15,15), 
             representative_point=True
         )
-        self.ax1.set_xlim(xlim)
-        self.ax1.set_ylim(ylim)
-        self.ax1.set_title(f"Frame: {self.frame}", weight = 600) 
+        self.ax.set_xlim(xlim)
+        self.ax.set_ylim(ylim)
+        #self.ax.set_title(f"Frame: {self.frame}", weight = 600) 
 
-        disconnect_zoom = zoom_factory(self.ax1)
+        disconnect_zoom = zoom_factory(self.ax)
         self.fig.canvas.draw_idle()
+        
 
-
-    def on_key(self, event):
-        if event.key in ['right', 'down']:
-            self.frame = min(self.frame + 1, self.max_frame) 
-        elif event.key in ['left', 'up']:
-            self.frame = max(self.frame - 1, 0)
-        elif event.key == 'c':
-            self.label_style_index = (self.label_style_index + 1) % len(self.label_styles)
-        elif event.key == 'l':
-            self.label_info_index = (self.label_info_index + 1) % len(self.labels)
-        else:
-            return
-        self.update_plot()
+    def reset_zoom(self):
+        """Reset the zoom level to the original xlim and ylim."""
+        self.ax.set_xlim(self.original_xlim)
+        self.ax.set_ylim(self.original_ylim)
+        self.fig.canvas.draw_idle()
