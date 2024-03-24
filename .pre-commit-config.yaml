@@ -20,6 +20,5 @@ dependencies:
   - pytest-cov
   - coverage
   - omnipose
-  - pip:
-    - git+https://github.com/suzhenyu22/python-mip@dev
+  - python-mip
 
