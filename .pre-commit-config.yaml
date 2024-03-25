@@ -22,4 +22,5 @@ dependencies:
   - pip: 
     - omnipose
     - mip
+    - opencv-python
 
