@@ -42,7 +42,7 @@ class Weight:
         weight_logger.info("Weight function start computing weight matrix")
         t_start = time.time()
 
-        # this's a gloabl matrix including all candidates segementations in all frame
+        # this's a gloabl matrix including all candidates segmentations in all frame
         # its size could be really large, use Scipy sparse matrix to save memory
 
         frame_num = len(self.hier_arr)

@@ -18,7 +18,7 @@ import time
 
 
 def get_niter_range(cellprob, ndim, precison = 1):
-    """Get the Euler integration range of segementation hierarchy"""
+    """Get the Euler integration range of segmentation hierarchy"""
     
     min = 1
     # the niter omnipose used, should be the proper niter
@@ -30,7 +30,7 @@ def get_niter_range(cellprob, ndim, precison = 1):
 
 
 def compute_hierarchy(cellprob,dP):
-    """Master method of computer segementation hierarchy"""
+    """Master method of computer segmentation hierarchy"""
     mask_threshold  = 0 
     device = torch_CPU
 
@@ -54,8 +54,8 @@ def compute_hierarchy(cellprob,dP):
     hier = Hierarchy(Node(list(range(coords.shape[0])))) 
     hier.root.shape = cellprob.shape
 
-    # iteration to computer segementation hierarchy
-    # every itereation do sub-segementation inside previous segementation
+    # iteration to computer seementation hierarchy
+    # every itereation do sub-segmentation inside previous segmentation
     for t in range(np.max(niters) + 1):
         current_coords = step(p_norm_torch, dP_norm_torch, shape)
         if t in niters:
@@ -117,7 +117,7 @@ def put_segement(coords, hier, remove_small_masks = False):
     MIN_MASK_SZIE = 15
     dbscan = DBSCAN(eps=EPS, min_samples=MIN_SAMPLES) 
 
-    # do subsegementation under segementation hierachy leaves 
+    # do subsegmentation under segmentation hierachy leaves 
     leaves = hier.all_leaves()
     for leave in leaves:
         sub_indices = leave.value
@@ -133,12 +133,13 @@ def put_segement(coords, hier, remove_small_masks = False):
             if len(indices_with_label) <  MIN_MASK_SZIE:
                 labels[indices_with_label] = alter_label
 
-        # snap outlier to segementation
+        # snap outlier to segmentation
         labels = snap(sub_coods, labels)
 
         valid_labels = np.unique([label for label in labels if label >= 0])
         if len(valid_labels) > 1 or leave == hier.root: 
-            # more than 1 sub-segementation detected under current segementation 
+            # Segmentatuin disconnect 
+            # more than 1 sub-segmentation detected under current segmentation 
             for l in valid_labels:
                 indices_with_label = np.where(labels == l)[0] 
                 # if sub_indices is [1,6,8,13,16], indices_with_labels = [0,3], it return [1,13]
@@ -174,6 +175,11 @@ def _format_hier(hier, cellprob, coords):
         sub_coords = coords[np.array(node.value)]
         mask = np.zeros(cellprob.shape)
         mask[sub_coords[:, 0], sub_coords[:, 1]] = 1
+
+        # TODO: compute uncertainty
+        """
         labeled_mask, num_features = measure.label((cellprob * mask) > 1 , connectivity=1, return_num=True)
         node.uncertainty = num_features / len(node.value)
+        """
+        node.uncertainty = 0
         node.value = sub_coords

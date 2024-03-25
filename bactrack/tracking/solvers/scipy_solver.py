@@ -54,10 +54,10 @@ class ScipySolver(Solver):
         # it's node index to node frame list
         node_frames = np.array([node.frame for hier in self.hier_arr for node in hier.all_nodes()])
         assert len(node_frames) == self.seg_N, \
-            "node's frames info list should have a length of total segementation candidates"
+            "node's frames info list should have a length of total segmentation candidates"
         
         assert len(self.mask_penalty) == self.seg_N, \
-            "Mask penalty should have a length of total segementation candidates"
+            "Mask penalty should have a length of total segmentation candidates"
 
         # set up c in mip problem, also known as objective function coeff
 

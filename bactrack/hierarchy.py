@@ -20,7 +20,7 @@ class Node:
         self.frame = kwargs.get('frame', None)
         self.bound = kwargs.get('bound', None)
 
-        self.label = kwargs.get('label', None)  # only picked segementation have label 
+        self.label = kwargs.get('label', None)  # only picked segmentation have label 
         self.next = kwargs.get('next', None) # next frame node, only picked sgementation have next
 
  
@@ -135,8 +135,8 @@ class Hierarchy:
             _, total_index = hierarchy.label_nodes(start_index = total_index)
 
     @staticmethod
-    def compute_segementation_metrics(hier_arr):
-        """Computer each candidates segementation in hierarchy prepare for weight calculation"""
+    def compute_segmentation_metrics(hier_arr):
+        """Computer each candidates segmentation in hierarchy prepare for weight calculation"""
         for i in range(len(hier_arr)):
 
             hier = hier_arr[i]

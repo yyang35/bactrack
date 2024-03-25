@@ -44,7 +44,7 @@ def format_output(hier_arr, n, edges):
         mask = np.zeros(hier.root.shape)
         for node in hier.all_nodes():
             if node.index in n_set:
-                assert node.frame == t, "Segementation's frame should consist with hierarchy frame"
+                assert node.frame == t, "Segmentation's frame should consist with hierarchy frame"
                 mask[node.value[:,0], node.value[:,1]] = label
                 node.label = label
                 label += 1

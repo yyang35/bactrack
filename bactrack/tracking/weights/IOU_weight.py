@@ -29,7 +29,7 @@ class IOUWeight(Weight):
             crop_mask =  mask_target[node_source.value[:,0],node_source.value[:,1]]
             index, counts = np.unique(crop_mask, return_counts=True)
             stats = dict(zip(index, counts))
-            # label = -1 for background, this is not in segementation. 
+            # label = -1 for background, this is not in segmentation. 
             stats.pop(-1, None)
 
             overlapped_leaves = set(stats.keys()).intersection(self.supers.keys())
