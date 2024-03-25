@@ -18,5 +18,5 @@ dependencies:
   - scipy
   - pip:
     - omnipose
-    - python-mip
+    - mip
 
