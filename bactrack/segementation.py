@@ -26,10 +26,10 @@ def get_niter_range(cellprob, ndim, precison = 1):
     max = int(2 * (ndim + 1) * np.max(cellprob[cellprob > 0]))
 
     n = precison + 2
-    return np.unique(np.concatenate((np.linspace(min, mid, n), np.linspace(mid, max, n)))).astype(int) 
+    return np.unique(np.concatenate(([0, 1, 2, 3], np.linspace(min, mid, n), np.linspace(mid, max, n)))).astype(int) 
 
 
-def computer_hierarchy(cellprob,dP):
+def compute_hierarchy(cellprob,dP):
     """Master method of computer segementation hierarchy"""
     mask_threshold  = 0 
     device = torch_CPU

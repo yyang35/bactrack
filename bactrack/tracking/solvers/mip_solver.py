@@ -10,7 +10,7 @@ from .solver import Solver
 MIP_solver_logger = logging.getLogger(__name__)
 
 class MIPSolver(Solver):
-    def __init__(self, weight_matrix, hier_arr, mask_penalty = None, coverage = None, n_divide = 2):
+    def __init__(self, weight_matrix, hier_arr, mask_penalty = None, coverage = 1.0, n_divide = 2):
 
         try:
             # Attempt to create a model with Gurobi as the solver
@@ -77,8 +77,19 @@ class MIPSolver(Solver):
             + mip.xsum( (disappearances * not_end) * config.DISAPPEAR_COST)
             + mip.xsum( self.weight_matrix.data * edges)
         )
+
+        """
+        area = np.zeros(self.seg_N)
+        for t in range(np.max(frames) + 1):
+            hier = self.hier_arr[t]
+            for node in hier.all_nodes():
+                area[node.index] = node.area
+
+            self.model.add_constr(mip.xsum(nodes[frames == t] * area[frames == t]) >= 1.0 * hier.root.area)
         
-        # set constrain 
+        """
+
+        # set constrain s
         rows, cols = self.weight_matrix.nonzero() 
         for i in range(self.seg_N):
             target_indices = np.where(rows == i)[0]
@@ -89,7 +100,9 @@ class MIPSolver(Solver):
             self.model.add_constr(nodes[i] + divisions[i] == mip.xsum(edges[target_indices]) + disappearances[i])
             # check this 
             self.model.add_constr(LARGE * nodes[i] >= divisions[i])
-
+            # test add aera penalty
+            #print((area[cols[target_indices]], area[i]))
+            #self.model.add_constr(mip.xsum(area[cols[target_indices]] * edges[target_indices])  >=  0.9 *area[i] * nodes[i] -1 * LARGE * disappearances[i])
         return nodes, edges
 
 
@@ -119,7 +132,17 @@ class MIPSolver(Solver):
             sub.coverage = node.coverage / len(node.subs)
             self._assign(sub)
 
-        
+
+    def _add_area_penalty(self):
+        # this is a testing function, for fix the small mask not be selected error. 
+        area = np.zeros(self.seg_N)
+        for node in self.hier_arr.all_nodes():
+            area[node.index] = node.index
+
+        rows, cols = self.weight_matrix.nonzero() 
+        for i in range(self.seg_N):
+            target_indices = np.where(rows == i)[0]
+            
 
 
 
