@@ -26,7 +26,7 @@ jobs:
         auto-activate-base: false
 
     - name: Install System Dependencies
-      run: sudo apt-get update && sudo apt-get install -y libopencv-dev libgl1-mesa-glx libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran libqtgui4 libqtwebkit4 libqt4-test python3-pyqt5
+      run: sudo apt-get update && sudo apt-get install -y libopencv-dev libgl1-mesa-glx libegl1-mesa libgtk2.0-dev libgtk-3-dev libatlas-base-dev gfortran libqtgui4 libqtwebkit4 libqt4-test python3-pyqt5
 
     - name: Run Tests
       run: |
