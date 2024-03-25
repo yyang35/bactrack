@@ -20,6 +20,7 @@ dependencies:
   - pytest-cov
   - coverage
   - opencv
+  - torchvision
   - pip: 
     - omnipose
     - mip
