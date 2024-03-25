@@ -19,6 +19,7 @@ dependencies:
   - scipy
   - pytest-cov
   - coverage
+  - opencv
   - pip: 
     - omnipose
     - mip

@@ -16,6 +16,7 @@ dependencies:
   - tqdm
   - psutil
   - scipy
+  - opencv
   - pip:
     - omnipose
     - mip
