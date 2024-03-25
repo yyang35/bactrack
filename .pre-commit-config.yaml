@@ -22,7 +22,8 @@ dependencies:
   - pytest-cov
   - coverage
   - opencv
+  - pip
   - pip: 
-    - omnipose
+    - git+https://github.com/kevinjohncutler/omnipose.git
     - mip
 
