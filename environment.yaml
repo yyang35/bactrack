@@ -5,6 +5,8 @@ channels:
   - defaults
 dependencies:
   - python>=3.8
+  - pytorch
+  - torchvision
   - cellpose>=2.2.3
   - numpy
   - pandas
@@ -17,7 +19,6 @@ dependencies:
   - psutil
   - scipy
   - opencv
-  - torchvision
   - pip:
     - omnipose
     - mip
