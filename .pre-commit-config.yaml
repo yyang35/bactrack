@@ -19,6 +19,7 @@ dependencies:
   - scipy
   - pytest-cov
   - coverage
-  - omnipose
-  - python-mip
+  - pip: 
+    - omnipose
+    - python-mip
 
