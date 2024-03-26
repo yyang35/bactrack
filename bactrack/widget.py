@@ -1,6 +1,6 @@
 
 import numpy as np
-from bactrack.hierarchy import Node, Hierarchy
+from bactrack.hierarchy import Node, Hierarchy, _format_hier
 """
 self.value = value
 self.super = kwargs.get('super', None)
@@ -31,21 +31,26 @@ def get_segmentation_hierarchy_from_masks(images):
     """
     Given a list of images, return the segmentation hierarchy.
     """
-    for image in images:
+    for frame in len(images):
+        image = images[frame]
         max_label = np.max(image)
         root_node = Node(
-            values = 
+            values = np.argwhere(image != 0).tolist(),
             super = -1, 
-
-
+            shape = image.shape,
         )
-
+        hier = Hierarchy(root_node)
         for i in range(0, max_label+1):
+            if np.sum(image == i) == 0:
+                continue
 
-            binary_mask = image == i
+            current_segment_node = Node(value = np.argwhere(image == i).tolist())
+            root_node.add_sub(current_segment_node)
+            current_segment_node.super = root_node
+            current_segment_node.label = i
+            current_segment_node.frame = frame
 
-            polygon =  extractor.single_cell_mask_to_polygon(binary_mask)
-            cells.add(Cell(polygon = polygon, label = i, frame=0))
+        _format_hier(hier, image, np.argwhere(image != 0))
         
 
 

@@ -51,7 +51,10 @@ def compute_hierarchy(cellprob,dP):
     p_torch, dP_torch = _to_torch(p, dP_, device)
     p_norm_torch, dP_norm_torch = _normalize(p_torch, dP_torch, shape) 
 
-    hier = Hierarchy(Node(list(range(coords.shape[0])))) 
+    pixels_count = coords.shape[0]
+    all_pixels_index = range(pixels_count)
+    root_node = Node(list(all_pixels_index))
+    hier = Hierarchy(root_node)
     hier.root.shape = cellprob.shape
 
     # iteration to computer seementation hierarchy
