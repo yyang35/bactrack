@@ -1,30 +1,22 @@
 
 import numpy as np
-from bactrack.hierarchy import Node, Hierarchy, _format_hier
-"""
-self.value = value
-self.super = kwargs.get('super', None)
-self.subs = []
+from bactrack.hierarchy import Node, Hierarchy
+from bactrack.io import get_image_files
+from PIL import Image
 
-self.index = kwargs.get('index', None) # index corresponding to linking matrix 
-
-self.shape = kwargs.get('shape', None) # Canvas shape
-self.uncertainty = kwargs.get('uncertainty', None)
-self.area = kwargs.get('area', None)
-self.centroid = kwargs.get('centroid', None)
-self.frame = kwargs.get('frame', None)
-self.bound = kwargs.get('bound', None)
-
-self.label = kwargs.get('label', None)  # only picked segmentation have label 
-self.next = kwargs.get('next', None) # next frame node, only picked sgementation have next
-
-"""
 
 def get_hierarchies_from_masks_folder(masks_folder):
     """
     Given a folder with masks, return the segmentation hierarchy.
     """
-    pass
+    image_files = get_image_files(masks_folder)
+    images = []
+    for file in image_files:
+        image = Image.open(file).convert('L')
+        label_mask = np.array(image)
+        images.append(label_mask)
+
+    return get_hierarchies_from_masks(images)
 
     
 def get_hierarchies_from_masks(images):

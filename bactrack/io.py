@@ -4,6 +4,8 @@ import pandas as pd
 from PIL import Image
 import os
 import logging
+import glob 
+from natsort import natsorted
 
 from .hierarchy import Hierarchy
 
@@ -21,7 +23,7 @@ def load(data, seg_io):
         return False
 
     if isinstance(data, str) and os.path.isdir(data):
-        files = seg_io.get_image_files(data)
+        files = get_image_files(data)
         imgs = [seg_io.imread(f) for f in files]
         return imgs
     elif is_valid_image_structure(data):
@@ -96,3 +98,18 @@ def df_to_hiers(df):
         hier_arr.append(hier)
 
     return hier_arr
+
+
+def get_image_files(folder, extensions = ['png','jpg','jpeg','tif','tiff'], pattern=None):
+    """ find all images in a folder and if look_one_level_down all subfolders """
+
+    image_names = []
+
+    for ext in extensions:
+        image_names.extend(glob.glob(folder + ('/*%s.'+ext)))
+    
+    image_names = natsorted(image_names)
+    if len(image_names)==0:
+        raise ValueError('ERROR: no images in --dir folder')
+    
+    return image_names
