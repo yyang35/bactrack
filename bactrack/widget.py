@@ -20,17 +20,18 @@ self.next = kwargs.get('next', None) # next frame node, only picked sgementation
 
 """
 
-def get_segmentation_hierarchy_from_masks_folder(masks_folder):
+def get_hierarchies_from_masks_folder(masks_folder):
     """
     Given a folder with masks, return the segmentation hierarchy.
     """
     pass
 
     
-def get_segmentation_hierarchy_from_masks(images):
+def get_hierarchies_from_masks(images):
     """
     Given a list of images, return the segmentation hierarchy.
     """
+    hier_arr = []
     for frame in len(images):
         image = images[frame]
         max_label = np.max(image)
@@ -50,7 +51,10 @@ def get_segmentation_hierarchy_from_masks(images):
             current_segment_node.label = i
             current_segment_node.frame = frame
 
-        _format_hier(hier, image, np.argwhere(image != 0))
+        Hierarchy.compute_segmentation_metrics(hier)
+        hier_arr.append(hier)
+        return hier_arr
+
         
 
 

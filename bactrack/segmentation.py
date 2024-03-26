@@ -171,7 +171,10 @@ def snap(coords, labels):
 
     return labels
 
-
+# Be careful with the following method, is should be indeed a private method
+# The value of Node should be the coordinates of pixcels, rather than the index of pixcels
+# It just for convient to make it be index of pixcels during the dynmaic process
+# Need transfer to right format through this function
 def _format_hier(hier, cellprob, coords):
     for node in hier.all_nodes(include_root = True): 
         node.shape = cellprob.shape
