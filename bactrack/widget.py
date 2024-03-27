@@ -19,33 +19,37 @@ def get_hierarchies_from_masks_folder(masks_folder):
     return get_hierarchies_from_masks(images)
 
     
-def get_hierarchies_from_masks(images):
+def get_hierarchies_from_masks(masks):
     """
     Given a list of images, return the segmentation hierarchy.
     """
     hier_arr = []
-    for frame in len(images):
-        image = images[frame]
-        max_label = np.max(image)
+    for frame in range(len(masks)):
+        mask= masks[frame]
+        shape = mask.shape
+        max_label = np.max(mask)
         root_node = Node(
-            values = np.argwhere(image != 0).tolist(),
-            super = -1, 
-            shape = image.shape,
+            value = np.array(np.nonzero(mask)).T.astype(np.int32),
+            super = None, # root node has no super, is represented as  -1 in df, and None in code
+            shape = shape,
         )
         hier = Hierarchy(root_node)
-        for i in range(0, max_label+1):
-            if np.sum(image == i) == 0:
+        for i in range(1, max_label+1):
+            if np.sum(mask == i) == 0:
                 continue
 
-            current_segment_node = Node(value = np.argwhere(image == i).tolist())
+            current_segment_node = Node(value = np.argwhere(mask == i))
             root_node.add_sub(current_segment_node)
             current_segment_node.super = root_node
             current_segment_node.label = i
             current_segment_node.frame = frame
+            current_segment_node.shape = shape
 
-        Hierarchy.compute_segmentation_metrics(hier)
         hier_arr.append(hier)
-        return hier_arr
+    
+    Hierarchy.label_hierarchy_array(hier_arr)
+    Hierarchy.compute_segmentation_metrics(hier_arr)
+    return hier_arr
 
         
 

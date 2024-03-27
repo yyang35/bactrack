@@ -31,6 +31,13 @@ class DistanceWeight(Weight):
             num_points = len(kD_tree.data)
             k_nearest = min(self.k, num_points) 
             distance, index = kD_tree.query(source_node.centroid, k=k_nearest)
+
+            # scipy KDtree returns one num instead of list if k=1
+            # deal with this case
+            if k_nearest == 1:
+                index = [index]
+                distance = [distance]
+
             for i in range(k_nearest):
                 coord = tuple(kD_tree.data[index[i]])
                 source_index = source_node.index

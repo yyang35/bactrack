@@ -106,7 +106,7 @@ def get_image_files(folder, extensions = ['png','jpg','jpeg','tif','tiff'], patt
     image_names = []
 
     for ext in extensions:
-        image_names.extend(glob.glob(folder + ('/*%s.'+ext)))
+        image_names.extend(glob.glob(folder + ('/*.'+ext)))
     
     image_names = natsorted(image_names)
     if len(image_names)==0:
