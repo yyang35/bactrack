@@ -22,28 +22,26 @@ class RawImage(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, dpi=100):
         self.fig = Figure(dpi=dpi)
+        self.max_frame = 0
         self.ax = self.fig.add_subplot(111)
         self.ax.set_axis_off()
         self.ax.axis('off')
         
-        super(Viz, self).__init__(self.fig)
+        super(RawImage, self).__init__(self.fig)
 
         self.ax.set_facecolor('none')
         self.fig.patch.set_facecolor('none')
         
         # Set the Qt widget's palette to transparent
         palette = self.palette()
-        palette.setColor(QPalette.Window, QColor(0, 0, 0, 0))
+        palette.setColor(QPalette.Window, QColor(0.5, 0.5, 0.5, 1))
         self.setPalette(palette)
-
-        self.ax.callbacks.connect('xlim_changed', self.on_zoom)
-        self.ax.callbacks.connect('ylim_changed', self.on_zoom)
-        
         # Set the background of the QWidget which contains the canvas to transparent
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        #self.setAttribute(Qt.WA_TranslucentBackground)
 
 
     def show(self, images):
+        self.max_frame = len(images)
         self.images = images
         self.ax.imshow(images[0], cmap='gray')
 

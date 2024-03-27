@@ -3,7 +3,7 @@ import sys
 
 from PyQt6.QtCore import Qt, QSize, QObject, QEvent, pyqtSignal, QThread
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QPlainTextEdit,
-                             QHBoxLayout, QComboBox, QPushButton, QTextEdit, QScrollBar, QLabel, QStackedWidget, QSplitter)
+                             QHBoxLayout, QComboBox, QPushButton, QTextEdit, QScrollBar, QLabel, QStackedWidget, QFileDialog, QSplitter)
 
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
@@ -14,6 +14,7 @@ import logging
 from lineage import Lineage
 from visualizer import get_graph_stats_text
 import logging
+from raw_image import RawImage
 
         
 class StreamRedirect(QObject):
@@ -151,6 +152,8 @@ class MyMainWindow(QMainWindow):
         self.text_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.text_widget.setStyleSheet("border: 2px dashed #000000;")
         self.main_canvas.addWidget(self.text_widget)
+                # Raw image placeholder
+        self.main_canvas.addWidget(self.raw_image)
                 # Video canvas placeholder
         self.main_canvas.addWidget(self.track_timelapse_canvas)
         self.main_canvas.setCurrentIndex(0)
@@ -220,13 +223,20 @@ class MyMainWindow(QMainWindow):
             self.main_canvas.setCurrentIndex(1)
         else:
             self.toggle_button.setText("Raw image Off")
-            self.main_canvas.setCurrentIndex(0)
+            self.main_canvas.setCurrentIndex(2)
 
     def dropEvent(self, event):
         urls = event.mimeData().urls()
         logging.info(f"{urls} dropped")
         if urls:
             folder_path = urls[0].toLocalFile()
+
+            from bactrack import io
+            from cellpose_omni import io as omni_io
+            images = io.load(folder_path, omni_io)
+
+            self.raw_image.show(images)
+            self.main_canvas.setCurrentIndex(1)
 
             # Setup the worker and thread
             self.thread = QThread()  # Create a QThread object
@@ -253,8 +263,8 @@ class MyMainWindow(QMainWindow):
     def on_track_finished(self, composer, G):
         QApplication.restoreOverrideCursor()  # Restore the cursor
         self.track_timelapse_canvas.run(composer, G)
-        self.main_canvas.setCurrentIndex(1)
-        self.scrollbar.setMaximum(self.track_timelapse_canvas.max_frame)
+        self.main_canvas.setCurrentIndex(2)
+        self.scrollbar.setMaximum(self.raw_image.max_frame)
         self.lineage.show(G)
         self.linage_stat.setText(get_graph_stats_text(G))
         self.setGeometry(100, 100, 1100, 600)
@@ -266,7 +276,13 @@ class MyMainWindow(QMainWindow):
 
     def updateFrameView(self, value):
         self.frame = value
-        self.track_timelapse_canvas.update_plot(self)
+        self.update_plot()
+
+    def update_plot(self):
+        if self.main_canvas.currentIndex() == 1:
+            self.raw_image.update_plot(self)
+        elif self.main_canvas.currentIndex() == 2:
+            self.track_timelapse_canvas.update_plot(self)
     
     def keyPressEvent(self, event):
         if self.main_canvas.currentIndex() != 1:
@@ -284,7 +300,7 @@ class MyMainWindow(QMainWindow):
             event.ignore() 
             return  
         
-        self.track_timelapse_canvas.update_plot(self)
+        self.update_plot()
 
     def save_result(self):
         options = QFileDialog.Options()

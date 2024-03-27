@@ -3,7 +3,7 @@ import logging
 import numpy as np
 from tqdm import tqdm
 
-from .config import SEGEMENTATION_PARAMS_OMNIPOSE, SEGEMENTATION_PARAMS_CELLPOSE
+from .config import SEGMENTATION_PARAMS_OMNIPOSE, SEGMENTATION_PARAMS_CELLPOSE
 from .tracking import Weight, Solver
 from . import io
 
@@ -17,9 +17,9 @@ class ModelEnum(Enum):
     OMNIPOSE = "Omnipose"
     CELLPOSE = "Cellpose"
 
-SEGEMENTATION_PARAMS = {
-    ModelEnum.OMNIPOSE: SEGEMENTATION_PARAMS_OMNIPOSE,
-    ModelEnum.CELLPOSE: SEGEMENTATION_PARAMS_CELLPOSE
+SEGMENTATION_PARAMS = {
+    ModelEnum.OMNIPOSE: SEGMENTATION_PARAMS_OMNIPOSE,
+    ModelEnum.CELLPOSE: SEGMENTATION_PARAMS_CELLPOSE
 }
 
 def compute_hierarchy(
@@ -53,28 +53,28 @@ def compute_hierarchy(
     model = models.CellposeModel(gpu=use_GPU, model_type=submodel)
     
     imags = io.load(data, seg_io)
-    params = SEGEMENTATION_PARAMS[hypermodel]
+    params = SEGMENTATION_PARAMS[hypermodel]
 
-    # Step1. segementation model predict field (distance field + flow field), but does not compute mask
+    # Step1. segmentation model predict field (distance field + flow field), but does not compute mask
     params['compute_masks'] = False
     params['channels'] = chans
     _, flows, _ = model.eval(imags, **params)
 
-    core_logger.info("Segementation: predicting fields finish.")
+    core_logger.info("Segmentation: predicting fields finish.")
 
-    # Step2. base on predicted field, run dynamic integration, computer segementation hierarchy
+    # Step2. base on predicted field, run dynamic integration, computer segmentation hierarchy
     hier_arr = []
     for flow in tqdm(flows):
         hier_arr.append(compute_masks(flow))
 
-    core_logger.info("Segementation hierarchy builded.")
+    core_logger.info("Segmentation hierarchy builded.")
 
-    # Step3. mark the freatures of segementations in hierarchy
+    # Step3. mark the freatures of segmentations in hierarchy
     from .hierarchy import Hierarchy 
     Hierarchy.label_hierarchy_array(hier_arr)
-    Hierarchy.compute_segementation_metrics(hier_arr)
+    Hierarchy.compute_segmentation_metrics(hier_arr)
     
-    core_logger.info("Labeled feature of each segementation in hierarchy.")
+    core_logger.info("Labeled feature of each segmentation in hierarchy.")
 
     return hier_arr
 
@@ -113,7 +113,7 @@ def run_tracking(hier_arr, solver_name = "scipy_solver", weight_name = "overlap_
 
 def compute_masks(flow):
 
-    from .segementation import compute_hierarchy
+    from .segmentation import compute_hierarchy
 
     [RGB_dP, dP, cellprob, p, bd, tr, affinity, bounds] = flow
     dP, cellprob = dP.squeeze(), cellprob.squeeze()
