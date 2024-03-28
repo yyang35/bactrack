@@ -20,7 +20,7 @@ class Node:
         self.frame = kwargs.get('frame', None)
         self.bound = kwargs.get('bound', None)
 
-        self.label = kwargs.get('label', None)  # only picked segementation have label 
+        self.label = kwargs.get('label', None)  # only picked segmentation have label 
         self.next = kwargs.get('next', None) # next frame node, only picked sgementation have next
 
  
@@ -59,8 +59,8 @@ class Hierarchy:
         """Labels nodes in order"""
         # be careful with hier._index here, so if it have node
         # [1,2,3,4,5], hier._index = [1,6],
-        # _index[1] is larger than last element in hier, this is for _index[1] - _index[0] be the 
-        # total num of hier. 
+        # _index[-1] is larger than last element in hier, this is defined for convenience of 
+        # _index[-1] - _index[0] = total num of hier. 
         index = start_index
         for node in self.all_nodes():
             node.index = index
@@ -135,8 +135,8 @@ class Hierarchy:
             _, total_index = hierarchy.label_nodes(start_index = total_index)
 
     @staticmethod
-    def compute_segementation_metrics(hier_arr):
-        """Computer each candidates segementation in hierarchy prepare for weight calculation"""
+    def compute_segmentation_metrics(hier_arr):
+        """Computer each candidates segmentation in hierarchy prepare for weight calculation"""
         for i in range(len(hier_arr)):
 
             hier = hier_arr[i]
@@ -147,7 +147,9 @@ class Hierarchy:
             assert n_dim in (2,3), "Only can handle 2D/3D cases now"
 
             for node in hier.all_nodes(include_root = True):
+                # sub_coords: [[x1,y1], [x2,y2], [x3,y3], ..., [xn,yn]]
                 sub_coords =node.value
+                # ndim_coords: [[x1, x2, x3, ..., xn], [y1, y2, y3, ..., yn]]
                 n_dim_coords = [sub_coords[:, n] for n in range(n_dim)]
                 centroid = [np.mean(coord) for coord in n_dim_coords]
 
@@ -155,12 +157,12 @@ class Hierarchy:
                 node.frame = i
                 node.centroid = tuple(centroid)
                 node.bound = np.vstack((np.min(sub_coords, axis=0), np.max(sub_coords, axis=0))).T
-                node.value = sub_coords
                 
                 mask  = np.zeros(node.shape)
                 mask[sub_coords[:, 0], sub_coords[:, 1]] = 1
                 labeled_mask, num_features = measure.label(mask, connectivity=1, return_num=True)
-                if num_features > 1:
+                
+                if num_features > 1: # this mask is not connected, we only keep the largest one
                     component_sizes = [np.sum(labeled_mask == label) for label in range(1, num_features + 1)]
                     largest_component_label = np.argmax(component_sizes) + 1  # Add 1 to match label indices
                     largest_component_mask = (labeled_mask == largest_component_label)

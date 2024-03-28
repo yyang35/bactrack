@@ -5,6 +5,8 @@ channels:
   - defaults
 dependencies:
   - python>=3.8
+  - pytorch
+  - torchvision
   - cellpose>=2.2.3
   - numpy
   - pandas
@@ -19,7 +21,9 @@ dependencies:
   - scipy
   - pytest-cov
   - coverage
-  - pip:
-    - git+https://github.com/suzhenyu22/python-mip@dev
-    - git+https://github.com/yyang35/omnipose
+  - opencv
+  - pip
+  - pip: 
+    - git+https://github.com/kevinjohncutler/omnipose.git
+    - mip
 
