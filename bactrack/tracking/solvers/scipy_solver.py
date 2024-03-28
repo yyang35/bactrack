@@ -94,49 +94,50 @@ class ScipySolver(Solver):
             source_indices = np.where(cols == i)[0]
 
             # A_i for flow conservation:
-            # sum(in_edge) + appear = sum(out_edge) + disappear - division
-            # sum(in_edge) + appear - sum(out_edge) - disappear +  division = 0
-            A_i = np.zeros(len(c))
-            for target_index in target_indices:
-                # out edge
-                A_i[_index('EDGE', target_index)] = -1
+            # sum(in_edge) + appear = node
+            # equivalent to inequations
+            #   sum(in_edge) + appear - node >=  0
+            #   sum(in_edge) + appear - node <=  0
+
+            A_1 = np.zeros(len(c))
             for source_index in source_indices:
                 # in edge
-                A_i[_index('EDGE', source_index)] = 1
+                A_1[_index('EDGE', source_index)] = 1
 
-            A_i[_index('APPEAR', i)] = 1
-            A_i[_index('DISAPPEAR', i)] = -1
-            A_i[_index('DIVISION', i)] = 1
+            A_1[_index('APPEAR', i)] = 1
+            A_1[_index('NODE', i)] = -1
 
-            A.append(A_i)
+            A.append(A_1)
             b_lb.append(0)
             b_ub.append(0)
 
-            # A_ii for capcity constain
-            # sum(in_edge) + appear <= 1
-            A_in = np.zeros(len(c))
-            for source_index in source_indices:
-                A_in[_index('EDGE', source_index)] = 1
+            # node + division = sum(out_edge) + disappear
+            # equivalent to inequations
+            #   node + division - sum(out_edge) -  disappear >= 0
+            #   node + division - sum(out_edge) -  disappear <= 0
 
-            A_in[_index('APPEAR', i)] = 1
-            A_in[_index('NODE', i)] = -1
-
-            A.append(A_in)
-            b_lb.append(0)
-            b_ub.append(0)
-
-            # A_ii for capcity constain
-            # sum(in_edge) + appear <= 1
-            A_out = np.zeros(len(c))
+            A_2 = np.zeros(len(c))
             for target_index in target_indices:
-                A_out[_index('EDGE', target_index)] = 1
+                # out edge
+                A_2[_index('EDGE', target_index)] = -1
 
-            A_out[_index('DISAPPEAR', i)] = 1
-            A_out[_index('NODE', i)] = -1 * max(len(target_indices),1)
+            A_2[_index('DIVIDSION', i)] = 1
+            A_2[_index('NODE', i)] = 1
+            A_2[_index('DISAPPEAR', i)] = -1
 
-            A.append(A_out)
-            b_lb.append(-np.inf)
+            A.append(A_2)
+            b_lb.append(0)
             b_ub.append(0)
+
+            # M * node >= division
+            # M * node - division >= 0
+            A_3 = np.zeros(len(c))
+            A_3[_index('DIVISION', i)] = -1
+            A_3[_index('NODE', i)] = max(len(target_indices),1)
+
+            A.append(A_3)
+            b_lb.append(0)
+            b_ub.append(np.inf)
 
         # set constrain part, set the constrain on hierachy conflict
         for hier in self.hier_arr:
