@@ -72,7 +72,7 @@ def store_mask_arr(mask_arr, basedir):
     for idx, mask in enumerate(mask_arr):
         # Ensure mask is in uint8 format and scale if necessary
         if mask.dtype != np.uint8:
-            mask = (mask * 255).astype(np.uint8)
+            mask = mask.astype(np.uint8)
 
         mask_image = Image.fromarray(mask, 'L')
         mask_image_path = os.path.join(basedir, f'mask_{idx}.png')
