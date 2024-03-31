@@ -4,19 +4,16 @@ import ipywidgets as widgets
 from mpl_interactions import zoom_factory
 from IPython.display import display
 import matplotlib
-
-from cell_event import CellEvent
-from visualizer import CELL_EVENT_COLOR
-import visualizer
-import composer
-
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-
 from PyQt6.QtWidgets import QSizePolicy
 from PyQt6.QtGui import QPalette, QColor
 from PyQt6.QtCore import Qt
 
+from bactrack.gui.cell_event import CellEvent
+from bactrack.gui.visualizer import CELL_EVENT_COLOR
+import bactrack.gui.visualizer
+import bactrack.gui.composer
 
 class Viz(FigureCanvasQTAgg):
 

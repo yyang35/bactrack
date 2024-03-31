@@ -5,10 +5,10 @@ from mpl_interactions import zoom_factory
 from IPython.display import display
 import matplotlib
 
-from cell_event import CellEvent
-from visualizer import CELL_EVENT_COLOR
-import visualizer
-import composer
+from bactrack.gui.cell_event import CellEvent
+from bactrack.gui.visualizer import CELL_EVENT_COLOR
+import bactrack.gui.visualizer as visualizer
+import bactrack.gui.composer as composer
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure

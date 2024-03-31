@@ -85,6 +85,8 @@ class ScipySolver(Solver):
         # scipy milp only objective to minimize, so reverse the coeff
         c *= -1
 
+        print(c)
+
         def _index(type, offset):
             return ['NODE','APPEAR', 'DISAPPEAR', 'DIVISION', 'EDGE'].index(type) * self.seg_N + offset
         
@@ -153,6 +155,9 @@ class ScipySolver(Solver):
             b_lb.append(0)
             b_ub.append(np.inf)
 
+        print(A.shape)
+        print(row_index)
+
         # Step 4
         # set constrain part, set the constrain on hierachy conflict
         for hier in self.hier_arr:
@@ -162,7 +167,7 @@ class ScipySolver(Solver):
                     A.resize((row_index + 1, A.shape[1]))
                     A[row_index, _index('NODE', node.index)] = 1
                     A[row_index, _index('NODE', super)] = 1
-                    b_lb.append(-np.inf)
+                    b_lb.append(0)
                     b_ub.append(1)
 
         assert row_index == A.shape[0] - 1, \
@@ -170,9 +175,8 @@ class ScipySolver(Solver):
         assert (len(b_lb) == A.shape[0]) and (len(b_ub) == A.shape[0]), \
             "Lower bound and upper bound should have same length with A shape[0]"
         
-
         A = A.tocsr()
-        constraints = LinearConstraint(A, b_lb, b_ub)
+        constraints = LinearConstraint(A, lb = b_lb, ub = b_ub)
         integrality = np.ones_like(c)
         return c, constraints, integrality
 

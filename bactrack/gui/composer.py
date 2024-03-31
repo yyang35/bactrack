@@ -10,8 +10,8 @@ import sys
 import cv2
 from natsort import natsorted
 
-import extractor 
-from cell import Cell
+import bactrack.gui.extractor as extractor
+from bactrack.gui.cell import Cell
 
 
 class LinkComposer:

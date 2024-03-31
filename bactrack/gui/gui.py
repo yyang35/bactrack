@@ -11,10 +11,10 @@ import threading
 from run import run_track
 from viz import Viz 
 import logging
-from lineage import Lineage
-from visualizer import get_graph_stats_text
-import logging
-from raw_image import RawImage
+
+from bactrack.gui.lineage import Lineage
+from bactrack.gui.visualizer import get_graph_stats_text
+from bactrack.gui.raw_image import RawImage
 
         
 class StreamRedirect(QObject):
