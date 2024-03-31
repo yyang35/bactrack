@@ -173,8 +173,8 @@ class ScipySolver(Solver):
                     b_ub.append(1)
 
 
-        # Step 4
-        # set constrain part, set the constrain on hierachy conflict
+        # Step 5
+        # set coverage requirement
         threshold = self.coverage
         row_index += 1
         A.resize((row_index + 1, A.shape[1]))
