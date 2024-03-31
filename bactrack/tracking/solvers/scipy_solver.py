@@ -32,12 +32,6 @@ class ScipySolver(Solver):
         edge_list = res.x[4*self.seg_N:]
         node_list = res.x[:self.seg_N]
         self.res = res
-
-        """
-            assert len(edge_list) == self.weight_matrix.count_nonzero(), \
-            "Edge binary choosen list should have same length with edge list it self"
-        """
-
         e_matrix = dok_matrix(self.weight_matrix.shape)
         for i in np.where(edge_list > 0.5)[0]:
             #assert node_list[rows[i]] == 1 and node_list[cols[i]] == 1, "Edge should have a start node"
@@ -199,6 +193,6 @@ class ScipySolver(Solver):
         self.ub = b_ub
 
         constraints = LinearConstraint(A, lb = b_lb, ub = b_ub)
-        integrality = None
+        integrality = np.ones(len(c))
         return c, constraints, integrality
 
