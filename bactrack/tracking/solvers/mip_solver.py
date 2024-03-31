@@ -123,15 +123,6 @@ class MIPSolver(Solver):
                 coverage_arr[node.index] = node.coverage
 
         self.model.add_constr(mip.xsum(self.nodes * coverage_arr) >= threshold)
-        
-
-    def _assign(self, node):
-        if node is None:
-            return  
-        for sub in node.subs:
-            sub.coverage = node.coverage / len(node.subs)
-            self._assign(sub)
-
 
     def _add_area_penalty(self):
         # this is a testing function, for fix the small mask not be selected error. 

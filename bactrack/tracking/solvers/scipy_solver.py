@@ -16,8 +16,12 @@ class ScipySolver(Solver):
     def __init__(self, weight_matrix, hier_arr, mask_penalty = None, coverage = None):
         self.hier_arr = hier_arr
         self.weight_matrix = weight_matrix.tocsr()
+        self.rows, self.cols = self.weight_matrix.nonzero() 
+        self.data = self.weight_matrix.data
+        assert len(self.rows) == len(self.cols) == len(self.data), \
+            "Weight matrix should have same length of rows, cols and data"
         self.seg_N = hier_arr[-1]._index[-1]
-        self.coverage = None
+        self.coverage = 1 if coverage is None else coverage
         self.mask_penalty = np.zeros(self.seg_N) if mask_penalty is None else mask_penalty
         self.c, self.constraints, self.integrality = self._build_mip()
 
@@ -27,19 +31,19 @@ class ScipySolver(Solver):
         res = milp(c=self.c, constraints=self.constraints, integrality=self.integrality, bounds=bounds)
         edge_list = res.x[4*self.seg_N:]
         node_list = res.x[:self.seg_N]
+        self.res = res
 
-        assert len(edge_list) == self.weight_matrix.count_nonzero(), \
+        """
+            assert len(edge_list) == self.weight_matrix.count_nonzero(), \
             "Edge binary choosen list should have same length with edge list it self"
+        """
 
-
-        rows, cols = self.weight_matrix.nonzero() 
         e_matrix = dok_matrix(self.weight_matrix.shape)
-        for i in np.where(edge_list == 1)[0]:
+        for i in np.where(edge_list > 0.5)[0]:
             #assert node_list[rows[i]] == 1 and node_list[cols[i]] == 1, "Edge should have a start node"
-            print(rows[i], cols[i])
-            e_matrix[rows[i], cols[i]] = 1
+            e_matrix[self.rows[i], self.cols[i]] = 1
 
-        n = np.where(node_list == 1)[0]
+        n = np.where(node_list > 0.5 )[0]
         return n, e_matrix
         
 
@@ -77,7 +81,7 @@ class ScipySolver(Solver):
         # edge objective function coeff
         # weight_matrix store edge in: weight_matrix.nonzero() = rows, cols and weight_matrix.data
         # this means: an edge come from rows[i] to cols[i] have an weight data[i]
-        edge_obj = self.weight_matrix.data
+        edge_obj = self.data
 
         # master objective coeff
         c = np.concatenate((node_obj, appear_obj, disappear_obj, division_obj, edge_obj))
@@ -85,7 +89,7 @@ class ScipySolver(Solver):
         # scipy milp only objective to minimize, so reverse the coeff
         c *= -1
 
-        print(c)
+        self.c = c 
 
         def _index(type, offset):
             return ['NODE','APPEAR', 'DISAPPEAR', 'DIVISION', 'EDGE'].index(type) * self.seg_N + offset
@@ -94,9 +98,7 @@ class ScipySolver(Solver):
         # A @ x <= b 
         # A is a matrix, x is the column vector, b is the column vector
 
-        rows, cols = self.weight_matrix.nonzero() 
-        assert len(rows) == len(cols) == len(self.weight_matrix.data), \
-            "Weight matrix should have same length of rows, cols and data"
+        rows, cols = self.rows, self.cols
         b_lb, b_ub = [], [] # lower bound and upper bound of b
         A = dok_matrix((self.seg_N * 3, len(c)), dtype=np.float32)
         row_index = -1
@@ -170,13 +172,33 @@ class ScipySolver(Solver):
                     b_lb.append(0)
                     b_ub.append(1)
 
+
+        # Step 4
+        # set constrain part, set the constrain on hierachy conflict
+        threshold = self.coverage
+        row_index += 1
+        A.resize((row_index + 1, A.shape[1]))
+        for hier in self.hier_arr:
+            hier.root.coverage = 1 / len(self.hier_arr)
+            self._assign(hier.root)
+            for node in hier.all_nodes():
+                A[row_index, _index('NODE', node.index)] = node.coverage
+
+        b_lb.append(threshold)
+        b_ub.append(np.inf)
+
         assert row_index == A.shape[0] - 1, \
             "Row index should equal to A shape[0] -1"
         assert (len(b_lb) == A.shape[0]) and (len(b_ub) == A.shape[0]), \
             "Lower bound and upper bound should have same length with A shape[0]"
         
-        A = A.tocsr()
+        print(b_lb)
+        print(b_ub)
+
+        self.A = A
+        self.ub = b_ub
+
         constraints = LinearConstraint(A, lb = b_lb, ub = b_ub)
-        integrality = np.ones_like(c)
+        integrality = None
         return c, constraints, integrality
 

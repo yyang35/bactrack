@@ -12,8 +12,8 @@ from PyQt6.QtCore import Qt
 
 from bactrack.gui.cell_event import CellEvent
 from bactrack.gui.visualizer import CELL_EVENT_COLOR
-import bactrack.gui.visualizer
-import bactrack.gui.composer
+import bactrack.gui.visualizer as visualizer
+import bactrack.gui.composer as composer
 
 class Viz(FigureCanvasQTAgg):
 

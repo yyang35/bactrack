@@ -27,7 +27,7 @@ def run_track(path):
     else:
         images = io.load(path, omni_io)
         hier_arr = core.compute_hierarchy(images,hypermodel=ModelEnum.OMNIPOSE, submodel= 'bact_phase_omni')
-        pd.to_pickle(hier_arr, seg_file)
+        pd.to_pickle(hier_arr, seg_file) # what??? what?????? ??????
 
     nodes, edges = core.run_tracking(hier_arr, solver_name = 'scipy_solver')
     mask_arr, edge_df = io.format_output(hier_arr, nodes, edges)
