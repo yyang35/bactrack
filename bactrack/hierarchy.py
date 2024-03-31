@@ -59,8 +59,8 @@ class Hierarchy:
         """Labels nodes in order"""
         # be careful with hier._index here, so if it have node
         # [1,2,3,4,5], hier._index = [1,6],
-        # _index[-1] is larger than last element in hier, this is defined for convenience of 
-        # _index[-1] - _index[0] = total num of hier. 
+        # _index[-1] is larger than last element in hier, this is defined for convenience of :
+        #       _index[-1] - _index[0] = total num of hier. 
         index = start_index
         for node in self.all_nodes():
             node.index = index

@@ -100,6 +100,8 @@ class MyMainWindow(QMainWindow):
         # Preparing all wigets
         self.type_dropdown = QComboBox()
         self.model_dropdown = QComboBox()
+        self.solver_dropdown = QComboBox()
+        
         self.run_button = QPushButton('Run Tracking')
         self.reset_button = QPushButton('Reset Zoom')
         self.save_button = QPushButton('Save Result')
@@ -128,6 +130,14 @@ class MyMainWindow(QMainWindow):
         model_layout = QHBoxLayout()  
         model_layout.addWidget(QLabel('model:') , 1)
         model_layout.addWidget(self.model_dropdown, 3)
+
+            # Solver drop down
+        self.model_dropdown.addItems(["Scipy solver", "Mip solver"])
+        model_layout = QHBoxLayout()  
+        model_layout.addWidget(QLabel('model:') , 1)
+        model_layout.addWidget(self.model_dropdown, 3)
+
+
 
             # Buttons
         self.toggle_button.toggled.connect(self.rawImageToggled)

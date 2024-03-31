@@ -18,7 +18,6 @@ def run_track(path):
     print("Running tracking on", path)
 
     seg_file = path + ".segmentation.pkl"
-    
     if os.path.exists( seg_file):
         hier_arr = pd.read_pickle(seg_file)
     else:

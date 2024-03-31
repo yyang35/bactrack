@@ -35,9 +35,6 @@ class Viz(FigureCanvasQTAgg):
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor(0, 0, 0, 0))
         self.setPalette(palette)
-
-        self.ax.callbacks.connect('xlim_changed', self.on_zoom)
-        self.ax.callbacks.connect('ylim_changed', self.on_zoom)
         
         # Set the background of the QWidget which contains the canvas to transparent
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -114,29 +111,3 @@ class Viz(FigureCanvasQTAgg):
         self.ax.set_xlim(self.original_xlim)
         self.ax.set_ylim(self.original_ylim)
         self.fig.canvas.draw_idle()
-
-
-    def on_zoom(self, event):
-        # Example zoom event handler that would need to be connected to the matplotlib event system
-        xlim = self.ax.get_xlim()
-        ylim = self.ax.get_ylim()
-
-        # Calculate aspect ratios
-        plot_aspect_ratio = (xlim[1] - xlim[0]) / (ylim[1] - ylim[0])
-        canvas_aspect_ratio = self.figure.get_figwidth() / self.figure.get_figheight()
-
-        # Adjust limits based on aspect ratio comparison
-        if plot_aspect_ratio > canvas_aspect_ratio:
-            # Adjust ylim to maintain aspect ratio
-            xc = np.mean(xlim)
-            xrange = (ylim[1] -ylim[0]) * canvas_aspect_ratio
-            # [xc - xrange / 2, xc + xrange / 2]
-            self.ax.set_xlim(ylim * canvas_aspect_ratio)
-        else:
-            yc = np.mean(ylim)
-            yrange = (xlim[1] - xlim[0]) / canvas_aspect_ratio
-            #self.ax.set_ylim([yc - yrange / 2, yc + yrange / 2])
-            self.ax.set_ylim(xlim / canvas_aspect_ratio)
-
-
-        self.draw_idle()

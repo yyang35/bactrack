@@ -31,10 +31,12 @@ class ScipySolver(Solver):
         assert len(edge_list) == self.weight_matrix.count_nonzero(), \
             "Edge binary choosen list should have same length with edge list it self"
 
-        e_matrix = dok_matrix(self.weight_matrix.shape)
+
         rows, cols = self.weight_matrix.nonzero() 
+        e_matrix = dok_matrix(self.weight_matrix.shape)
         for i in np.where(edge_list == 1)[0]:
             #assert node_list[rows[i]] == 1 and node_list[cols[i]] == 1, "Edge should have a start node"
+            print(rows[i], cols[i])
             e_matrix[rows[i], cols[i]] = 1
 
         n = np.where(node_list == 1)[0]
@@ -52,8 +54,11 @@ class ScipySolver(Solver):
 
         # node_frames in format [0,0,0,0,1,1,1,1,2,2,2,2,]
         # it's node index to node frame list
-        node_frames = np.array([node.frame for hier in self.hier_arr for node in hier.all_nodes()])
-        assert len(node_frames) == self.seg_N, \
+        frames = np.array([node.frame for hier in self.hier_arr for node in hier.all_nodes()])
+        not_start = frames != 0
+        not_end = frames != np.max(frames)
+
+        assert len(frames) == self.seg_N, \
             "node's frames info list should have a length of total segmentation candidates"
         
         assert len(self.mask_penalty) == self.seg_N, \
@@ -64,11 +69,11 @@ class ScipySolver(Solver):
         # node objective function coeff
         node_obj = -1 * self.mask_penalty
         # appearence objective function coeff, penalty as long as not start frame
-        appear_obj = ( node_frames != 0 ) * config.APPEAR_COST
+        appear_obj = -1 * not_start * config.APPEAR_COST
         # disappearence objective function coeff, penalty as long as not end frame
-        disappear_obj = (node_frames != np.max(node_frames)) * config.DISAPPEAR_COST
+        disappear_obj = -1 * not_end * config.DISAPPEAR_COST
         # dividsion objective function coeff
-        division_obj = np.ones(self.seg_N) * config.DIVISION_COST 
+        division_obj = -1 * np.ones(self.seg_N) * config.DIVISION_COST 
         # edge objective function coeff
         # weight_matrix store edge in: weight_matrix.nonzero() = rows, cols and weight_matrix.data
         # this means: an edge come from rows[i] to cols[i] have an weight data[i]
@@ -82,10 +87,17 @@ class ScipySolver(Solver):
 
         def _index(type, offset):
             return ['NODE','APPEAR', 'DISAPPEAR', 'DIVISION', 'EDGE'].index(type) * self.seg_N + offset
+        
+
+        # A @ x <= b 
+        # A is a matrix, x is the column vector, b is the column vector
 
         rows, cols = self.weight_matrix.nonzero() 
-        assert len(rows) == len(cols) == len(self.weight_matrix.data), "Weight matrix should have same length of rows, cols and data"
-        A, b_lb, b_ub = [], [], []
+        assert len(rows) == len(cols) == len(self.weight_matrix.data), \
+            "Weight matrix should have same length of rows, cols and data"
+        b_lb, b_ub = [], [] # lower bound and upper bound of b
+        A = dok_matrix((self.seg_N * 3, len(c)), dtype=np.float32)
+        row_index = -1
 
         # set constrain part, which is the A, b part of 
         for i in range(self.seg_N):
@@ -93,65 +105,73 @@ class ScipySolver(Solver):
             target_indices = np.where(rows == i)[0]
             source_indices = np.where(cols == i)[0]
 
+            # Step 1
             # A_i for flow conservation:
             # sum(in_edge) + appear = node
             # equivalent to inequations
             #   sum(in_edge) + appear - node >=  0
             #   sum(in_edge) + appear - node <=  0
 
-            A_1 = np.zeros(len(c))
+            row_index += 1
             for source_index in source_indices:
                 # in edge
-                A_1[_index('EDGE', source_index)] = 1
+                A[row_index, _index('EDGE', source_index)] = 1
 
-            A_1[_index('APPEAR', i)] = 1
-            A_1[_index('NODE', i)] = -1
+            A[row_index, _index('APPEAR', i)] = 1
+            A[row_index, _index('NODE', i)] = -1
 
-            A.append(A_1)
             b_lb.append(0)
             b_ub.append(0)
 
+            
+            # Step 2
             # node + division = sum(out_edge) + disappear
             # equivalent to inequations
             #   node + division - sum(out_edge) -  disappear >= 0
             #   node + division - sum(out_edge) -  disappear <= 0
 
-            A_2 = np.zeros(len(c))
+            row_index += 1
             for target_index in target_indices:
                 # out edge
-                A_2[_index('EDGE', target_index)] = -1
+                A[row_index, _index('EDGE', target_index)] = -1
 
-            A_2[_index('DIVIDSION', i)] = 1
-            A_2[_index('NODE', i)] = 1
-            A_2[_index('DISAPPEAR', i)] = -1
+            A[row_index, _index('DIVISION', i)] = 1
+            A[row_index, _index('NODE', i)] = 1
+            A[row_index, _index('DISAPPEAR', i)] = -1
 
-            A.append(A_2)
             b_lb.append(0)
             b_ub.append(0)
 
+
+            # Step 3
             # M * node >= division
             # M * node - division >= 0
-            A_3 = np.zeros(len(c))
-            A_3[_index('DIVISION', i)] = -1
-            A_3[_index('NODE', i)] = max(len(target_indices),1)
+            row_index += 1
+            A[row_index, _index('DIVISION', i)] = -1
+            A[row_index, _index('NODE', i)] = 1
 
-            A.append(A_3)
             b_lb.append(0)
             b_ub.append(np.inf)
 
+        # Step 4
         # set constrain part, set the constrain on hierachy conflict
         for hier in self.hier_arr:
             for node in hier.all_nodes():
-                A_i = np.zeros(len(c))
-                A_i[_index('NODE', node.index)] = 1
                 for super in node.all_supers():
-                    A_i[_index('NODE', super)] = 1
-                    
-                A.append(A_i)
-                b_lb.append(-np.inf)
-                b_ub.append(1)
+                    row_index += 1
+                    A.resize((row_index + 1, A.shape[1]))
+                    A[row_index, _index('NODE', node.index)] = 1
+                    A[row_index, _index('NODE', super)] = 1
+                    b_lb.append(-np.inf)
+                    b_ub.append(1)
 
+        assert row_index == A.shape[0] - 1, \
+            "Row index should equal to A shape[0] -1"
+        assert (len(b_lb) == A.shape[0]) and (len(b_ub) == A.shape[0]), \
+            "Lower bound and upper bound should have same length with A shape[0]"
         
+
+        A = A.tocsr()
         constraints = LinearConstraint(A, b_lb, b_ub)
         integrality = np.ones_like(c)
         return c, constraints, integrality

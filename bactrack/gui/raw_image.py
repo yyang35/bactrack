@@ -33,9 +33,12 @@ class RawImage(FigureCanvasQTAgg):
         self.fig.patch.set_facecolor('none')
         
         # Set the Qt widget's palette to transparent
+        """
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor(0.5, 0.5, 0.5, 1))
         self.setPalette(palette)
+        
+        """
         # Set the background of the QWidget which contains the canvas to transparent
         #self.setAttribute(Qt.WA_TranslucentBackground)
 
