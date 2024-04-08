@@ -12,7 +12,7 @@ from shapely.geometry import Polygon, LineString
 from PIL import Image
 import numpy as np
 
-from cell import Cell
+from bactrack.gui.cell import Cell
 
 
 

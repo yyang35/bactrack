@@ -1,24 +1,25 @@
-import numpy as np
-import matplotlib.pyplot as plt
 import math
-from matplotlib.colors import ListedColormap
-from PIL import Image
 import string
 import cv2
 import os
-import matplotlib.patches as patches
 import glob
-import networkx as nx
-import matplotlib.ticker as ticker
 from typing import Set
 from pathlib import Path
 import random
 import colorsys
 from descartes import PolygonPatch
 
-from cell import Cell
-from cell_event import CellEvent, CellType, CellDefine
-from composer import LinkComposer
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from PIL import Image
+import matplotlib.patches as patches
+import networkx as nx
+import matplotlib.ticker as ticker
+
+from bactrack.gui.cell import Cell
+from bactrack.gui.cell_event import CellEvent, CellType, CellDefine
+from bactrack.gui.composer import LinkComposer
 
 
 # =========================  color styling constant ================================ #

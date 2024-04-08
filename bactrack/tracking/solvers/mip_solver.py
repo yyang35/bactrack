@@ -72,9 +72,9 @@ class MIPSolver(Solver):
         edges = self.model.add_var_tensor((self.weight_matrix.count_nonzero(),), name="edges", var_type=mip.BINARY)
 
         self.model.objective = (
-            mip.xsum( divisions * config.DIVISION_COST )
-            + mip.xsum( (appearances * not_start) * config.APPEAR_COST)
-            + mip.xsum( (disappearances * not_end) * config.DISAPPEAR_COST)
+            mip.xsum( -1 * divisions * config.DIVISION_COST )
+            + mip.xsum( -1 * (appearances * not_start) * config.APPEAR_COST)
+            + mip.xsum( -1 * (disappearances * not_end) * config.DISAPPEAR_COST)
             + mip.xsum( self.weight_matrix.data * edges)
         )
 
@@ -123,15 +123,6 @@ class MIPSolver(Solver):
                 coverage_arr[node.index] = node.coverage
 
         self.model.add_constr(mip.xsum(self.nodes * coverage_arr) >= threshold)
-        
-
-    def _assign(self, node):
-        if node is None:
-            return  
-        for sub in node.subs:
-            sub.coverage = node.coverage / len(node.subs)
-            self._assign(sub)
-
 
     def _add_area_penalty(self):
         # this is a testing function, for fix the small mask not be selected error. 

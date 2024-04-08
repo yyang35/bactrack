@@ -5,10 +5,10 @@ from mpl_interactions import zoom_factory
 from IPython.display import display
 import matplotlib
 
-from cell_event import CellEvent
-from visualizer import CELL_EVENT_COLOR
-import visualizer
-import composer
+from bactrack.gui.cell_event import CellEvent
+from bactrack.gui.visualizer import CELL_EVENT_COLOR
+import bactrack.gui.visualizer as visualizer
+import bactrack.gui.composer as composer
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -33,9 +33,12 @@ class RawImage(FigureCanvasQTAgg):
         self.fig.patch.set_facecolor('none')
         
         # Set the Qt widget's palette to transparent
+        """
         palette = self.palette()
         palette.setColor(QPalette.Window, QColor(0.5, 0.5, 0.5, 1))
         self.setPalette(palette)
+        
+        """
         # Set the background of the QWidget which contains the canvas to transparent
         #self.setAttribute(Qt.WA_TranslucentBackground)
 

@@ -1,32 +1,35 @@
+import os
+import logging
+
+import pandas as pd
+import numpy as np
+from shapely.geometry import Polygon
+
 from bactrack import io
 from bactrack import core
 from bactrack import gui
-import pandas as pd
-import pandas as pd
-from shapely.geometry import Polygon
-from cell import Cell
-from composer import LinkComposer
-import extractor 
-import visualizer
-import numpy as np
 from cellpose_omni import io as omni_io
 from bactrack.core import ModelEnum
-import os
-import logging
+from bactrack.gui.cell import Cell
+from bactrack.gui.composer import LinkComposer
+import bactrack.gui.extractor  as extractor
+import bactrack.gui.visualizer as visualizer
+
+
+
 
 def run_track(path):
     print("Running tracking on", path)
 
     seg_file = path + ".segmentation.pkl"
-    
     if os.path.exists( seg_file):
         hier_arr = pd.read_pickle(seg_file)
     else:
         images = io.load(path, omni_io)
         hier_arr = core.compute_hierarchy(images,hypermodel=ModelEnum.OMNIPOSE, submodel= 'bact_phase_omni')
-        pd.to_pickle(hier_arr, seg_file)
+        pd.to_pickle(hier_arr, seg_file) # what??? what?????? ??????
 
-    nodes, edges = core.run_tracking(hier_arr, solver_name = 'mip_solver')
+    nodes, edges = core.run_tracking(hier_arr, solver_name = 'scipy_solver')
     mask_arr, edge_df = io.format_output(hier_arr, nodes, edges)
     hier_df = io.hiers_to_df(hier_arr)
 

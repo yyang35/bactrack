@@ -1,9 +1,10 @@
 from enum import Enum
-from networkx import Graph
-from cell import Cell
 from typing import Set
 from typing import Iterable
 
+from networkx import Graph
+
+from bactrack.gui.cell import Cell
 
 # more strict cellEvent idea 
 # this is used to label lineage 
@@ -14,7 +15,6 @@ class CellEvent(Enum):
     # this are event represented on node(cell)
     BIRTH = "birth"
     DIE = "die"
-
 
 
 # more general cellEvent idea 

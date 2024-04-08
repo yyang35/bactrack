@@ -40,6 +40,10 @@ def format_output(hier_arr, n, edges):
     n_set = set(n)
     mask_arr = []
 
+    for hier in hier_arr:
+        for node in hier.all_nodes():
+            node.label = None
+
     for t in range(len(hier_arr)):
         hier = hier_arr[t]
         label = 1
