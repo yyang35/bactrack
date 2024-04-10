@@ -165,21 +165,7 @@ class ScipySolver(Solver):
                     A[row_index, _index('NODE', super)] = 1
                     b_lb.append(0)
                     b_ub.append(1)
-
-
-        # Step 5
-        # set coverage requirement
-        threshold = self.coverage
-        row_index += 1
-        A.resize((row_index + 1, A.shape[1]))
-        for hier in self.hier_arr:
-            hier.root.coverage = 1 / len(self.hier_arr)
-            self._assign(hier.root)
-            for node in hier.all_nodes():
-                A[row_index, _index('NODE', node.index)] = node.coverage
-
-        b_lb.append(threshold)
-        b_ub.append(np.inf)
+        
 
         assert row_index == A.shape[0] - 1, \
             "Row index should equal to A shape[0] -1"
@@ -193,6 +179,6 @@ class ScipySolver(Solver):
         self.ub = b_ub
 
         constraints = LinearConstraint(A, lb = b_lb, ub = b_ub)
-        integrality = np.ones(len(c))
+        integrality = 1
         return c, constraints, integrality
 
