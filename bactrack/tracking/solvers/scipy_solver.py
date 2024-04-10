@@ -151,8 +151,6 @@ class ScipySolver(Solver):
             b_lb.append(0)
             b_ub.append(np.inf)
 
-        print(A.shape)
-        print(row_index)
 
         # Step 4
         # set constrain part, set the constrain on hierachy conflict
@@ -172,8 +170,6 @@ class ScipySolver(Solver):
         assert (len(b_lb) == A.shape[0]) and (len(b_ub) == A.shape[0]), \
             "Lower bound and upper bound should have same length with A shape[0]"
         
-        print(b_lb)
-        print(b_ub)
 
         self.A = A
         self.ub = b_ub
