@@ -6,6 +6,7 @@ import os
 import logging
 import glob 
 from natsort import natsorted
+import fastremap
 
 from .hierarchy import Hierarchy
 
@@ -74,11 +75,10 @@ def store_mask_arr(mask_arr, basedir):
 
     # Save mask images
     for idx, mask in enumerate(mask_arr):
-        # Ensure mask is in uint8 format and scale if necessary
-        if mask.dtype != np.uint8:
-            mask = mask.astype(np.uint8)
-
-        mask_image = Image.fromarray(mask, 'L')
+        mask = mask.astype(np.uint32)
+        # Resize the array to the smallest dtype 
+        labels = fastremap.refit(labels)
+        mask_image = Image.fromarray(mask)
         mask_image_path = os.path.join(basedir, f'mask_{idx}.png')
         mask_image.save(mask_image_path)
 
