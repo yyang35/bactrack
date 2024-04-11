@@ -45,7 +45,7 @@ def run_track(path):
         cells.add(Cell(polygon = polygon, label = row['index'], frame=row['frame']))
 
     composer =  LinkComposer(cells=cells)
-    composer.phase_folder = path + '*.tif'
+    composer.phase_folder = os.path.join(path , '*.tif')
     G = composer.make_new_dircted_graph()
 
     for index, row in merged_df.iterrows():
