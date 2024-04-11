@@ -37,7 +37,7 @@ def load(data, seg_io):
         return None
 
 
-def format_output(hier_arr, n, edges, overwrite_mask = False):
+def format_output(hier_arr, n, edges, overwrite_mask = True):
 
     if overwrite_mask:
         n_set = set(n)
