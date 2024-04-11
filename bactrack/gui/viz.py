@@ -25,17 +25,6 @@ class Viz(FigureCanvasQTAgg):
         
         super(Viz, self).__init__(self.fig)
 
-        self.ax.set_facecolor('none')
-        self.fig.patch.set_facecolor('none')
-        
-        # Set the Qt widget's palette to transparent
-        palette = self.palette()
-        palette.setColor(QPalette.Window, QColor(0, 0, 0, 0))
-        self.setPalette(palette)
-        
-        # Set the background of the QWidget which contains the canvas to transparent
-        self.setAttribute(Qt.WA_TranslucentBackground)
-
 
     def run(self, composer, G):
         self.composer = composer
