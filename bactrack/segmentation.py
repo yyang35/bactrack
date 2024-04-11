@@ -60,6 +60,7 @@ def compute_hierarchy(cellprob,dP):
     # iteration to computer seementation hierarchy
     # every itereation do sub-segmentation inside previous segmentation
     for t in range(np.max(niters) + 1):
+        #dP_norm_torch /= step_factor(t)
         current_coords = step(p_norm_torch, dP_norm_torch, shape)
         if t in niters:
             hier = put_segement(current_coords, hier, remove_small_masks = True)
@@ -67,6 +68,18 @@ def compute_hierarchy(cellprob,dP):
     _format_hier(hier, cellprob, coords)
 
     return hier
+
+def step_factor(t):
+    """ Euler integration suppression factor.
+    
+    Conveneient wrapper function allowed me to test out several supression factors. 
+    
+    Parameters
+    -------------
+    t: int
+        time step
+    """
+    return (1+t)
 
 
 def step( pt, dP, shape):
