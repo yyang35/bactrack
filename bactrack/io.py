@@ -6,6 +6,7 @@ import os
 import logging
 import glob 
 from natsort import natsorted
+import fastremap
 
 from .hierarchy import Hierarchy
 
@@ -36,25 +37,29 @@ def load(data, seg_io):
         return None
 
 
-def format_output(hier_arr, n, edges):
-    n_set = set(n)
-    mask_arr = []
+def format_output(hier_arr, n, edges, overwrite_mask = True):
 
-    for hier in hier_arr:
-        for node in hier.all_nodes():
-            node.label = None
+    if overwrite_mask:
+        n_set = set(n)
+        mask_arr = []
 
-    for t in range(len(hier_arr)):
-        hier = hier_arr[t]
-        label = 1
-        mask = np.zeros(hier.root.shape)
-        for node in hier.all_nodes():
-            if node.index in n_set:
-                assert node.frame == t, "Segmentation's frame should consist with hierarchy frame"
-                mask[node.value[:,0], node.value[:,1]] = label
-                node.label = label
-                label += 1
-        mask_arr.append( mask)
+        for hier in hier_arr:
+            for node in hier.all_nodes():
+                node.label = None
+
+        for t in range(len(hier_arr)):
+            hier = hier_arr[t]
+            label = 1
+            mask = np.zeros(hier.root.shape)
+            for node in hier.all_nodes():
+                if node.index in n_set:
+                    assert node.frame == t, "Segmentation's frame should consist with hierarchy frame"
+                    mask[node.value[:,0], node.value[:,1]] = label
+                    node.label = label
+                    label += 1
+            mask_arr.append( mask)
+    else:
+        mask_arr = []
 
     data = []
 
@@ -74,11 +79,10 @@ def store_mask_arr(mask_arr, basedir):
 
     # Save mask images
     for idx, mask in enumerate(mask_arr):
-        # Ensure mask is in uint8 format and scale if necessary
-        if mask.dtype != np.uint8:
-            mask = mask.astype(np.uint8)
-
-        mask_image = Image.fromarray(mask, 'L')
+        mask = mask.astype(np.uint32)
+        # Resize the array to the smallest dtype 
+        labels = fastremap.refit(labels)
+        mask_image = Image.fromarray(mask)
         mask_image_path = os.path.join(basedir, f'mask_{idx}.png')
         mask_image.save(mask_image_path)
 
