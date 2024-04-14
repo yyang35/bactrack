@@ -274,7 +274,7 @@ class MyMainWindow(QMainWindow):
         QApplication.restoreOverrideCursor()  # Restore the cursor
         self.track_timelapse_canvas.run(composer, G)
         self.main_canvas.setCurrentIndex(2)
-        self.scrollbar.setMaximum(self.raw_image.max_frame)
+        self.scrollbar.setMaximum(self.raw_image.max_frame -1 )
         self.lineage.show(G)
         self.linage_stat.setText(get_graph_stats_text(G))
         self.setGeometry(100, 100, 1100, 600)
