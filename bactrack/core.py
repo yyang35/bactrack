@@ -24,24 +24,25 @@ SEGMENTATION_PARAMS = {
 
 def compute_hierarchy(
         data, 
-        hypermodel: ModelEnum = None, 
         chans = [0,0], 
         submodel = None, 
 ):
-    hypermodel = ModelEnum.OMNIPOSE if hypermodel is None else hypermodel
+    hypermodel = ModelEnum.OMNIPOSE if "omni" in submodel else ModelEnum.CELLPOSE if "cp" in submodel else None
 
     if hypermodel == ModelEnum.OMNIPOSE:
+        core_logger.info("Using Omnipose model")
         import omnipose
         from cellpose_omni import io as seg_io
         from cellpose_omni import transforms, models, core
         from omnipose.utils import normalize99
     elif hypermodel == ModelEnum.CELLPOSE:
+        core_logger.info("Using Cellpose model")
         import cellpose
         from cellpose import io as seg_io
         from cellpose import transforms, models, core
         from cellpose.transforms import normalize99
     else:
-        raise Exception("No support on model {hypermodel}")
+        raise Exception("No support on model {submode}")
     
     if submodel not in models.MODEL_NAMES:
         core_logger.info(

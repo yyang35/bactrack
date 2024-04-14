@@ -1,4 +1,3 @@
-import time
 import numpy as np
 import pandas as pd
 from PIL import Image
@@ -37,30 +36,26 @@ def load(data, seg_io):
         return None
 
 
-def format_output(hier_arr, n, edges, overwrite_mask = True):
+def format_output(hier_arr, nodes, edges, label_format = "default", overwrite_mask = True):
 
-    if overwrite_mask:
-        n_set = set(n)
-        mask_arr = []
+    if overwrite_mask is True:
+        label_format = label_format.lower()
+        if label_format == "default":
+            _label_default_format(hier_arr, nodes, edges)
+        elif label_format == "kevin":
+            _label_kevin_format(hier_arr, nodes, edges)
+        else:
+            raise ValueError(f"Label format {label_format} not found")
 
-        for hier in hier_arr:
-            for node in hier.all_nodes():
-                node.label = None
-
-        for t in range(len(hier_arr)):
-            hier = hier_arr[t]
-            label = 1
-            mask = np.zeros(hier.root.shape)
-            for node in hier.all_nodes():
-                if node.index in n_set:
-                    assert node.frame == t, "Segmentation's frame should consist with hierarchy frame"
-                    mask[node.value[:,0], node.value[:,1]] = label
-                    node.label = label
-                    label += 1
-            mask_arr.append( mask)
-    else:
-        mask_arr = []
-
+    mask_arr = []
+    for t in range(len(hier_arr)):
+        hier = hier_arr[t]
+        mask = np.zeros(hier.root.shape)
+        for node in hier.all_nodes():
+            if node.label is not None:
+                mask[node.value[:,0], node.value[:,1]] = node.label
+        mask_arr.append(mask)
+    
     data = []
 
     for (source_index, target_index), _ in edges.items():
@@ -70,6 +65,80 @@ def format_output(hier_arr, n, edges, overwrite_mask = True):
     edge_df = pd.DataFrame(data, columns=['Source Index', 'Target Index'])
     
     return mask_arr, edge_df 
+
+def _label_kevin_format(hier_arr, nodes, edges):
+    from queue import Queue
+
+    n_set = set(nodes)
+    dict = {}
+    for (source_index, target_index), _ in edges.items():
+        if source_index in dict:
+            dict[source_index].append(target_index)
+        else:
+            dict[source_index] = [target_index]
+
+    index_nodes_dict = {}
+    for hier in hier_arr:
+        for node in hier.all_nodes():
+            node.label = None
+            index_nodes_dict[node.index] = node  
+
+    # Following are BFS on lineage tree
+    queue = Queue()
+    label = 1
+    for node in hier_arr[0].all_nodes():
+        if node.index in n_set:
+            queue.put(node)
+            node.label = label
+            label += 1
+
+    frame = 0
+    # Do Width First Search on lineage tree here:   
+    while queue.empty() == False:
+        current_node = queue.get()
+        if current_node.frame != frame:
+            frame = current_node.frame
+            for node in hier_arr[frame].all_nodes():
+                if node.index in n_set and node.label is None:
+                    queue.put(node)
+                    node.label = label
+                    label += 1
+
+        target_indices = dict.get(current_node.index)
+        if target_indices is None:
+            continue
+        # if divide, then create new labels for each target cell
+        if len(target_indices) > 1:
+            for target_index in target_indices:
+                target = index_nodes_dict[target_index]
+                assert target.label is None, "target cell should not have label"
+                queue.put(target)
+                target.label = label 
+                label += 1
+
+        # if not divide, then same label with source cell
+        elif len(target_indices) == 1:
+            target = index_nodes_dict[target_indices[0]]
+            assert target.label is None, "target cell should not have label"
+            queue.put(target)
+            target.label = current_node.label
+            
+    
+def _label_default_format(hier_arr, nodes, edges):
+     # n_set is a set of all selected IOU's index
+    n_set = set(nodes)
+    for hier in hier_arr:
+        for node in hier.all_nodes():
+            node.label = None
+
+    for t in range(len(hier_arr)):
+        hier = hier_arr[t]
+        label = 1
+        for node in hier.all_nodes():
+            if node.index in n_set:
+                assert node.frame == t, "Segmentation's frame should consist with hierarchy frame"
+                node.label = label
+                label += 1
 
 
 def store_mask_arr(mask_arr, basedir):
