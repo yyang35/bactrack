@@ -7,10 +7,12 @@ from skimage import filters, measure
 
 class Node:
     def __init__(self, value, **kwargs):
+       
         self.value = value
         self.super = kwargs.get('super', None)
         self.subs = []
 
+         # global unique index on all frame. 
         self.index = kwargs.get('index', None) # index corresponding to linking matrix 
         
         self.shape = kwargs.get('shape', None) # Canvas shape
@@ -48,6 +50,7 @@ class Node:
                      ['value', 'next','shape', 'uncertainty', 'area', 'centroid', 'frame', 'bound','index', 'label',]}
         node_dict['super'] = self.super.index if self.super is not None else None
         return node_dict
+
 
 
 class Hierarchy:
