@@ -20,25 +20,14 @@ from PyQt6.QtCore import Qt
 
 class Lineage(FigureCanvasQTAgg):
 
-    def __init__(self, parent=None, dpi=100):
+    def __init__(self, main_window, parent=None, dpi=100):
+        self.bg_color = main_window.bg_color
         self.fig = Figure(dpi=dpi)
         self.ax = self.fig.add_subplot(111)
-        self.ax.set_facecolor('none')
-        self.fig.patch.set_facecolor('none')
-
-        
+        self.fig.set_facecolor(self.bg_color) 
+        self.ax.set_facecolor(self.bg_color)
         super(Lineage, self).__init__(self.fig)
-
-        self.fig.patch.set_alpha(0.0)
-        self.ax.patch.set_alpha(0.0)
-        
-        # Set the Qt widget's palette to transparent
-        palette = self.palette()
-        palette.setColor(QPalette.Window, QColor(0, 0, 0, 0))
-        self.setPalette(palette)
-
         # Set the background of the QWidget which contains the canvas to transparent
-        self.setAttribute(Qt.WA_TranslucentBackground)
 
 
     def show(self, G):
@@ -56,4 +45,6 @@ class Lineage(FigureCanvasQTAgg):
                                              edges_special=edges_s, 
                                              show_stat = False
                                              )
-        #self.ax.set_axis_off()
+        self.ax.set_facecolor(self.bg_color)
+        self.fig.set_facecolor(self.bg_color) 
+        
