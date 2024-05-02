@@ -32,6 +32,7 @@ class Viz(FigureCanvasQTAgg):
         #self.ax.axis('off')
         self.choice = ImageEnum.RAW
         self.fig.set_facecolor(main_window.bg_color)
+        self.main_window = main_window
         
         super(Viz, self).__init__(self.fig)
 
@@ -49,7 +50,7 @@ class Viz(FigureCanvasQTAgg):
         self.label_styles = ["regular", "circled", "empty"]
         self.label_style = self.label_styles[self.label_style_index]
   
-        image = self.composer.get_single_frame_phase(frame = 0)
+        image = self.composer.get_single_frame_phase(frame = self.main_window.frame)
         self.ax = visualizer.subplot_single_frame_phase(ax=self.ax, G=G, image=image, cells_frame_dict=composer.cells_frame_dict, label_style  = self.label_style, frame=0, info=label_info, fontsize=7, representative_point=True)
 
         self.original_xlim = self.ax.get_xlim()
@@ -65,17 +66,17 @@ class Viz(FigureCanvasQTAgg):
         self.images = images
         self.ax.imshow(images[0], cmap='gray')
 
-    def update_plot(self, main_window):
-        self.update_plot_raw(main_window)
-        if self.choice == ImageEnum.RAW:
-            self.update_plot_raw(main_window)
-        elif self.choice == ImageEnum.LINK:
-            self.update_plot_link(main_window)
+    def update_plot(self):
+        if self.choice.value == ImageEnum.RAW.value:
+            self.update_plot_raw()
+        elif self.choice.value == ImageEnum.LINK.value:
+            self.update_plot_link()
 
-    def update_plot_link(self, main_window):
+    def update_plot_link(self):
         # Assuming visualizer, composer, and G are defined
         # Create the initial plot
         # Update plot function
+        main_window = self.main_window
         label_info = self.labels[main_window.label_index]
         label_style = self.label_styles[main_window.style_index]
 
@@ -104,13 +105,15 @@ class Viz(FigureCanvasQTAgg):
         disconnect_zoom = zoom_factory(self.ax)
         self.fig.canvas.draw_idle()
 
-    def update_plot_raw(self, main_window):
+    def update_plot_raw(self):
         # Assuming visualizer, composer, and G are defined
         # Create the initial plot
         # Update plot function
         if self.images is None:
             return
-
+        
+        main_window = self.main_window
+        
         xlim = self.ax.get_xlim()
         ylim = self.ax.get_ylim()
 

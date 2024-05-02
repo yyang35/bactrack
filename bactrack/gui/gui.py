@@ -1,4 +1,6 @@
 import sys
+import concurrent.futures
+from functools import partial
 from PyQt6.QtCore import Qt, QSize, QObject, QEvent, pyqtSignal, QThread
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QPlainTextEdit,
                              QHBoxLayout, QComboBox, QPushButton, QTextEdit, QScrollBar, QLabel, QStackedWidget, QFileDialog, QSplitter, QRadioButton,)
@@ -14,7 +16,7 @@ from bactrack.gui.lineage import Lineage
 from bactrack.gui.visualizer import get_graph_stats_text
 from bactrack.gui.viz import ImageEnum
 from bactrack import core
-
+from tqdm.auto import tqdm
         
 class StreamRedirect(QObject):
     text_written = pyqtSignal(str)
@@ -25,6 +27,16 @@ class StreamRedirect(QObject):
     def flush(self):
         pass
 
+class TqdmLoggingHandler(logging.StreamHandler):
+
+    def __init__(self, level=logging.NOTSET):
+        logging.StreamHandler.__init__(self)
+
+    def emit(self, record):
+        msg = self.format(record)
+        tqdm.write(msg)
+        # from https://stackoverflow.com/questions/38543506/change-logging-print-function-to-tqdm-write-so-logging-doesnt-interfere-wit/38739634#38739634
+        self.flush()
 
 class Worker(QObject):
     finished = pyqtSignal(object, object)  # Signal for when the task is finished
@@ -94,7 +106,6 @@ class MyMainWindow(QMainWindow):
         self.weight_dropdown = QComboBox()
         
         self.run_button = QPushButton(' Run Tracking')
-        self.reset_button = QPushButton('Reset Zoom')
         self.save_button = QPushButton('Save Result')
         self.scrollbar = QScrollBar(Qt.Orientation.Horizontal)
 
@@ -158,9 +169,11 @@ class MyMainWindow(QMainWindow):
         choice_layout.addWidget(self.raw_image_choice)
         choice_layout.addWidget(self.link_result_choice)
         choice_layout.addWidget(self.flow_field_choice)
+        self.raw_image_choice.clicked.connect(lambda: self.changeImageType(ImageEnum.RAW))
+        self.link_result_choice.clicked.connect(lambda: self.changeImageType(ImageEnum.LINK))
+        self.flow_field_choice.clicked.connect(lambda: self.changeImageType(ImageEnum.FLOW))
 
             # Buttons
-        self.reset_button.clicked.connect(self.track_timelapse_canvas.reset_zoom)
         self.run_button.clicked.connect(self.runEvent)
         self.save_button.clicked.connect(self.save_result)
         self.run_button.setIcon(QIcon(("/Users/sherryyang/Projects/bactrack/bactrack/gui/images/run.ico")))
@@ -180,7 +193,6 @@ class MyMainWindow(QMainWindow):
         left_layout.addLayout(weight_layout)
         left_layout.addLayout(type_layout)
         left_layout.addLayout(choice_layout)
-        left_layout.addWidget(self.reset_button)
         left_layout.addWidget(self.run_button)
         left_layout.addStretch(1) 
         left_layout.addWidget(self.save_button)
@@ -260,11 +272,13 @@ class MyMainWindow(QMainWindow):
 
             self.track_timelapse_canvas.choice = ImageEnum.RAW
             self.track_timelapse_canvas.show_raw(images)
+            self.changeImageType(ImageEnum.RAW)
             self.scrollbar.setMaximum(self.track_timelapse_canvas.max_frame -1 )
             self.main_canvas.setCurrentIndex(1)
             self.worker = Worker(folder_path)
 
     def runEvent(self, event):
+        self.run_button.setEnabled(False)
         # Setup the worker and thread
         hypermodel = self.models_mapping[self.model_dropdown.currentText()][0]
         submodel = self.models_mapping[self.model_dropdown.currentText()][1]
@@ -279,33 +293,45 @@ class MyMainWindow(QMainWindow):
         self.worker.finished.connect(self.on_track_finished)  # Connect the finished signal to a slot
         self.worker.finished.connect(self.thread.quit)  # Ensure the thread quits when the task is done
         self.worker.error.connect(self.on_track_error)  # Connect the error signal to a slot
-        self.thread.started.connect(lambda: self.worker.run_track(
-                hypermodel=hypermodel, 
-                submodel=submodel, 
-                solver_name=solver_name, 
-                weight_name=weight_name, 
-                file_extension=file_extension,
-            )
-        )  # Start the worker's task when the thread starts
 
-        # Start the thread
-        self.thread.start()
 
-        # Optional: Change the cursor to indicate processing
-        QApplication.setOverrideCursor(Qt.BusyCursor)
+        # Use concurrent.futures to run the tracking task in a separate thread
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Submit the tracking task to the executor
+            future = executor.submit(self.worker.run_track,
+                                     hypermodel=hypermodel,
+                                     submodel=submodel,
+                                     solver_name=solver_name,
+                                     weight_name=weight_name,
+                                     file_extension=file_extension)
 
+            # Connect a callback to handle task completion (success or error)
+            future.add_done_callback(partial(self.on_track_completed, future))
+
+
+    def changeImageType(self, type: ImageEnum):
+        self.track_timelapse_canvas.choice = type
+        if type == ImageEnum.LINK:
+            self.link_result_choice.setChecked(True)
+        elif type == ImageEnum.RAW:
+            self.raw_image_choice.setChecked(True)
+        elif type == ImageEnum.FLOW:
+            self.flow_field_choice.setChecked(True)
+        self.track_timelapse_canvas.update_plot()
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
 
     def on_track_finished(self, composer, G):
+        self.run_button.setEnabled(True)
         QApplication.restoreOverrideCursor()  # Restore the cursor
         self.track_timelapse_canvas.choice = ImageEnum.LINK
         self.track_timelapse_canvas.run(composer, G)
         self.scrollbar.setMaximum(self.track_timelapse_canvas.max_frame -1 )
         self.lineage.show(G)
         self.linage_stat.setText(get_graph_stats_text(G))
+        self.changeImageType(ImageEnum.LINK)
         self.setGeometry(100, 100, 1400, 700)
         self.extra_widget.setVisible(True)
 
@@ -315,7 +341,7 @@ class MyMainWindow(QMainWindow):
 
     def updateFrameView(self, value):
         self.frame = value
-        self.track_timelapse_canvas.update_plot(self)
+        self.track_timelapse_canvas.update_plot()
     
     def keyPressEvent(self, event):
         if self.main_canvas.currentIndex() != 1:

@@ -16,6 +16,8 @@ from matplotlib.figure import Figure
 from PyQt6.QtWidgets import QSizePolicy
 from PyQt6.QtGui import QPalette, QColor
 from PyQt6.QtCore import Qt
+from tqdm.auto import tqdm
+
 
 
 class Lineage(FigureCanvasQTAgg):

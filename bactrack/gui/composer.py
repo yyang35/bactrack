@@ -24,7 +24,6 @@ class LinkComposer:
         self.frame_num = len(self.cells_frame_dict)
 
 
-
     # a dictionary of cells, with key as frame index, and value as a set of cell
     def get_cells_frame_dict(self, cells: Set[Cell]) -> dict:
         cells_frame_dict = {}
@@ -37,7 +36,6 @@ class LinkComposer:
         return cells_frame_dict
     
 
-
     # provide new graphy base on cell set data 
     def make_new_dircted_graph(self):
         G = nx.DiGraph()
@@ -47,13 +45,11 @@ class LinkComposer:
         return G
 
 
-
     # link two cells by adding edge on graph, protected graph by assert nodes are in graph
     def link(self, G, cell1, cell2):
         assert cell1 in self.cells, "source cell not in cells"
         assert cell2 in self.cells, "target cell not in cells"
         G.add_edge(cell1, cell2)
-
 
     
     # extract cells and construct other related info from phase tif, and mask tif #
@@ -71,7 +67,6 @@ class LinkComposer:
         composer.mask_tif = mask_tif
 
         return composer
-
 
 
     # extract cells and construct other related info from phase folder, and mask folder #
