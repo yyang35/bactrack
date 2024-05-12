@@ -8,5 +8,6 @@ dependencies:
   - pytest-cov
   - coverage
   - pip: 
+    - git+https://github.com/kevinjohncutler/omnipose.git
     - .
     - .[GUI]

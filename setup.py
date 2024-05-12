@@ -6,7 +6,7 @@ setup(
     description="Cell tracking package",
     install_requires=[
         'cellpose>=2.2.3',
-        'git+https://github.com/kevinjohncutler/omnipose.git',
+        'omnipose',
         'mip',
         'numpy',
         'pandas',
