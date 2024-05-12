@@ -16,20 +16,20 @@ import bactrack.gui.extractor  as extractor
 import bactrack.gui.visualizer as visualizer
 
 
-
-
-def run_track(path):
-    print("Running tracking on", path)
+def run_track(path, solver_name, weight_name, submodel, hypermodel, file_extension):
+    logging.info(f"Running tracking on {path}")
+    logging.info(f"Using solver: {solver_name}, weight: {weight_name}, hypermodel: {hypermodel}, submodel: {submodel}, file_extension: {file_extension}")
 
     seg_file = path + ".segmentation.pkl"
     if os.path.exists( seg_file):
         hier_arr = pd.read_pickle(seg_file)
     else:
         images = io.load(path, omni_io)
-        hier_arr = core.compute_hierarchy(images,hypermodel=ModelEnum.OMNIPOSE, submodel= 'bact_phase_omni')
-        pd.to_pickle(hier_arr, seg_file) # what??? what?????? ??????
+        hier_arr = core.compute_hierarchy(images,hypermodel=hypermodel, submodel=submodel)
+        #seems panda could save any object type to pickle, here is backtrack heriarchy
+        pd.to_pickle(hier_arr, seg_file) 
 
-    nodes, edges = core.run_tracking(hier_arr, solver_name = 'scipy_solver')
+    nodes, edges = core.run_tracking(hier_arr, solver_name = solver_name, weight_name = weight_name)
     mask_arr, edge_df = io.format_output(hier_arr, nodes, edges)
     hier_df = io.hiers_to_df(hier_arr)
 
@@ -45,7 +45,7 @@ def run_track(path):
         cells.add(Cell(polygon = polygon, label = row['index'], frame=row['frame']))
 
     composer =  LinkComposer(cells=cells)
-    composer.phase_folder = os.path.join(path , '*.tif')
+    composer.phase_folder = os.path.join(path , file_extension)
     G = composer.make_new_dircted_graph()
 
     for index, row in merged_df.iterrows():
@@ -59,3 +59,6 @@ def run_track(path):
     return composer, G
 
 
+def open_in_napari(composer, G):
+    logging.info("Opening in Napari")
+    pass

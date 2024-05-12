@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from enum import Enum
 import ipywidgets as widgets
 from mpl_interactions import zoom_factory
 from IPython.display import display
@@ -15,23 +16,31 @@ from bactrack.gui.visualizer import CELL_EVENT_COLOR
 import bactrack.gui.visualizer as visualizer
 import bactrack.gui.composer as composer
 
+class ImageEnum(Enum):
+    RAW = "raw image"
+    LINK = "link result"
+    FLOW = "flow field"
+
+
 class Viz(FigureCanvasQTAgg):
 
-    def __init__(self, parent=None, dpi=100):
+    def __init__(self, main_window, parent=None, dpi=100):
         self.fig = Figure(dpi=dpi)
+        self.max_frame = 0
         self.ax = self.fig.add_subplot(111)
-        self.ax.set_axis_off()
-        self.ax.axis('off')
+        #self.ax.set_axis_off()
+        #self.ax.axis('off')
+        self.choice = ImageEnum.RAW
+        self.fig.set_facecolor(main_window.bg_color)
+        self.main_window = main_window
         
         super(Viz, self).__init__(self.fig)
-
 
     def run(self, composer, G):
         self.composer = composer
         self.G = G
         self.label_info_index = 0
         self.label_style_index = 0
-        self.max_frame = composer.frame_num - 1
 
         label_info_1 = visualizer.get_label_info(G)
         label_info_2 = visualizer.get_generation_label_info(G)
@@ -41,7 +50,7 @@ class Viz(FigureCanvasQTAgg):
         self.label_styles = ["regular", "circled", "empty"]
         self.label_style = self.label_styles[self.label_style_index]
   
-        image = self.composer.get_single_frame_phase(frame = 0)
+        image = self.composer.get_single_frame_phase(frame = self.main_window.frame)
         self.ax = visualizer.subplot_single_frame_phase(ax=self.ax, G=G, image=image, cells_frame_dict=composer.cells_frame_dict, label_style  = self.label_style, frame=0, info=label_info, fontsize=7, representative_point=True)
 
         self.original_xlim = self.ax.get_xlim()
@@ -52,11 +61,22 @@ class Viz(FigureCanvasQTAgg):
         self.ax.set_axis_off()
         self.fig.canvas.draw()
 
+    def show_raw(self, images):
+        self.max_frame = len(images)
+        self.images = images
+        self.ax.imshow(images[0], cmap='gray')
 
-    def update_plot(self, main_window):
+    def update_plot(self):
+        if self.choice.value == ImageEnum.RAW.value:
+            self.update_plot_raw()
+        elif self.choice.value == ImageEnum.LINK.value:
+            self.update_plot_link()
+
+    def update_plot_link(self):
         # Assuming visualizer, composer, and G are defined
         # Create the initial plot
         # Update plot function
+        main_window = self.main_window
         label_info = self.labels[main_window.label_index]
         label_style = self.label_styles[main_window.style_index]
 
@@ -82,18 +102,35 @@ class Viz(FigureCanvasQTAgg):
         )
         self.ax.set_xlim(xlim)
         self.ax.set_ylim(ylim)
-        #self.ax.set_title(f"Frame: {self.frame}", weight = 600) 
-
-        self.ax.set_facecolor('none')
-        self.fig.patch.set_facecolor('none')
-
         disconnect_zoom = zoom_factory(self.ax)
         self.fig.canvas.draw_idle()
+
+    def update_plot_raw(self):
+        # Assuming visualizer, composer, and G are defined
+        # Create the initial plot
+        # Update plot function
+        if self.images is None:
+            return
         
+        main_window = self.main_window
+        
+        xlim = self.ax.get_xlim()
+        ylim = self.ax.get_ylim()
+
+        self.fig.clf()
+        self.ax = self.fig.add_subplot(111)  
+        self.ax.set_facecolor('none')  
+        
+        self.ax.clear()
+        self.ax.imshow(self.images[main_window.frame], cmap='gray')
+
+        self.ax.set_xlim(xlim)
+        self.ax.set_ylim(ylim)
+        #self.ax.set_title(f"Frame: {self.frame}", weight = 600) 
+        self.fig.canvas.draw_idle()
 
     def reset_zoom(self):
         """Reset the zoom level to the original xlim and ylim."""
-
         self.ax.set_xlim(self.original_xlim)
         self.ax.set_ylim(self.original_ylim)
         self.fig.canvas.draw_idle()

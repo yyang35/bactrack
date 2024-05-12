@@ -262,7 +262,7 @@ def get_graph_stats_text(G):
     last_frame_cells = composer.cells_frame_dict[frame_index[-1]]
     cell_num = len(last_frame_cells)
     text = f"""
-            Max frame: {max_frame}
+            Total frame: {max_frame + 1}
             Coverage rate: {coverage_rate:.2%}
             Last frame cell num: {cell_num}
             Merge: {merge}, Split: {split}, Birth: {birth}, Death: {death}

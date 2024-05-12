@@ -150,7 +150,7 @@ def store_mask_arr(mask_arr, basedir):
     for idx, mask in enumerate(mask_arr):
         mask = mask.astype(np.uint32)
         # Resize the array to the smallest dtype 
-        labels = fastremap.refit(labels)
+        mask = fastremap.refit(mask)
         mask_image = Image.fromarray(mask)
         mask_image_path = os.path.join(basedir, f'mask_{idx}.png')
         mask_image.save(mask_image_path)

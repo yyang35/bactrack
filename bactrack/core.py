@@ -8,10 +8,7 @@ from .tracking import Weight, Solver
 from . import io
 
 # To avoid any cyclic import, packages are import locally inside method. 
-
-
 core_logger = logging.getLogger(__name__)
-
 
 class ModelEnum(Enum):
     OMNIPOSE = "Omnipose"
@@ -26,8 +23,12 @@ def compute_hierarchy(
         data, 
         chans = [0,0], 
         submodel = None, 
+        hypermodel = None,
+        **kwargs
 ):
-    hypermodel = ModelEnum.OMNIPOSE if "omni" in submodel else ModelEnum.CELLPOSE if "cp" in submodel else None
+    omnipose_models, cellpose_models = load_models()
+    if hypermodel is None:
+        hypermodel = ModelEnum.OMNIPOSE if submodel in omnipose_models else ModelEnum.CELLPOSE if submodel in cellpose_models else None
 
     if hypermodel == ModelEnum.OMNIPOSE:
         core_logger.info("Using Omnipose model")
@@ -59,7 +60,7 @@ def compute_hierarchy(
     # Step1. segmentation model predict field (distance field + flow field), but does not compute mask
     params['compute_masks'] = False
     params['channels'] = chans
-    _, flows, _ = model.eval(imags, **params)
+    _, flows, _ = model.eval(imags, **params, **kwargs)
 
     core_logger.info("Segmentation: predicting fields finish.")
 
@@ -113,9 +114,7 @@ def run_tracking(hier_arr, solver_name = "scipy_solver", weight_name = "overlap_
 
 
 def compute_masks(flow):
-
     from .segmentation import compute_hierarchy
-
     [RGB_dP, dP, cellprob, p, bd, tr, affinity, bounds] = flow
     dP, cellprob = dP.squeeze(), cellprob.squeeze()
     hier = compute_hierarchy(cellprob, dP)
@@ -123,6 +122,22 @@ def compute_masks(flow):
     return hier
 
 
+def load_models():
+    omni_models = []
+    cp_models = []
+    try:
+        from cellpose_omni.models import MODEL_NAMES
+        omni_models.extend(MODEL_NAMES) 
+    except:
+        pass
+
+    try: 
+        from cellpose.models import MODEL_NAMES
+        cp_models.extend(MODEL_NAMES)
+    except:
+        pass
+
+    return omni_models, cp_models
 
 
 
