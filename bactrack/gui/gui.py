@@ -4,7 +4,7 @@ from functools import partial
 from PyQt6.QtCore import Qt, QSize, QObject, QEvent, pyqtSignal, QThread
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QPlainTextEdit,
                              QHBoxLayout, QComboBox, QPushButton, QTextEdit, QScrollBar, QLabel, QStackedWidget, QFileDialog, QSplitter, QRadioButton,)
-from PyQt6.QtGui import QIcon, QPalette
+from PyQt6.QtGui import QIcon, QPalette, QCursor
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 import threading
@@ -17,6 +17,7 @@ from bactrack.gui.visualizer import get_graph_stats_text
 from bactrack.gui.viz import ImageEnum
 from bactrack import core
 from tqdm.auto import tqdm
+
         
 class StreamRedirect(QObject):
     text_written = pyqtSignal(str)
@@ -174,6 +175,7 @@ class MyMainWindow(QMainWindow):
         self.flow_field_choice.clicked.connect(lambda: self.changeImageType(ImageEnum.FLOW))
 
             # Buttons
+        self.run_button.setCheckable(True)
         self.run_button.clicked.connect(self.runEvent)
         self.save_button.clicked.connect(self.save_result)
         self.run_button.setIcon(QIcon(("/Users/sherryyang/Projects/bactrack/bactrack/gui/images/run.ico")))
@@ -181,11 +183,29 @@ class MyMainWindow(QMainWindow):
         self.run_button.setStyleSheet('''
             QPushButton {
                 border-radius: 5px;
-                background-color:  #007BFF;
                 color: white;
-                padding: 6px 0px; 
+                padding: 6px 12px;
+            }
+
+            QPushButton:!checked {
+                background-color: #007BFF;
+            }
+
+            QPushButton:checked {
+                background-color: #6c757d; 
             }
         ''')
+
+        def set_button_cursor(enabled):
+            if enabled:
+                self.run_button.setCursor(QCursor(Qt.PointingHandCursor))  # Change cursor to pointing hand (pointer)
+            else:
+                self.run_button.setCursor(QCursor(Qt.ArrowCursor))  # Use default arrow cursor
+
+        # Connect hover events to cursor change function
+        self.run_button.enterEvent = lambda event: set_button_cursor(self.run_button.isEnabled())
+        self.run_button.leaveEvent = lambda event: set_button_cursor(self.run_button.isEnabled())
+
 
         # Left layout construction
         left_layout.addLayout(model_layout)
@@ -278,7 +298,6 @@ class MyMainWindow(QMainWindow):
             self.worker = Worker(folder_path)
 
     def runEvent(self, event):
-        self.run_button.setEnabled(False)
         # Setup the worker and thread
         hypermodel = self.models_mapping[self.model_dropdown.currentText()][0]
         submodel = self.models_mapping[self.model_dropdown.currentText()][1]
@@ -286,27 +305,22 @@ class MyMainWindow(QMainWindow):
         weight_name = self.weights_mapping[self.weight_dropdown.currentText()]
         file_extension = "*" + self.type_dropdown.currentText()
 
-        self.thread = QThread()  # Create a QThread object
-        self.worker.moveToThread(self.thread)  # Move the Worker to the thread
+        self.thread = QThread() 
+        self.worker.moveToThread(self.thread) 
 
         # Connect signals
         self.worker.finished.connect(self.on_track_finished)  # Connect the finished signal to a slot
         self.worker.finished.connect(self.thread.quit)  # Ensure the thread quits when the task is done
         self.worker.error.connect(self.on_track_error)  # Connect the error signal to a slot
-
-
-        # Use concurrent.futures to run the tracking task in a separate thread
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            # Submit the tracking task to the executor
-            future = executor.submit(self.worker.run_track,
-                                     hypermodel=hypermodel,
-                                     submodel=submodel,
-                                     solver_name=solver_name,
-                                     weight_name=weight_name,
-                                     file_extension=file_extension)
-
-            # Connect a callback to handle task completion (success or error)
-            future.add_done_callback(partial(self.on_track_completed, future))
+        self.thread.started.connect(lambda: self.worker.run_track(
+                hypermodel=hypermodel, 
+                submodel=submodel, 
+                solver_name=solver_name, 
+                weight_name=weight_name, 
+                file_extension=file_extension,
+            )
+        )  
+        self.thread.start()
 
 
     def changeImageType(self, type: ImageEnum):
@@ -324,7 +338,6 @@ class MyMainWindow(QMainWindow):
             event.acceptProposedAction()
 
     def on_track_finished(self, composer, G):
-        self.run_button.setEnabled(True)
         QApplication.restoreOverrideCursor()  # Restore the cursor
         self.track_timelapse_canvas.choice = ImageEnum.LINK
         self.track_timelapse_canvas.run(composer, G)
@@ -344,21 +357,28 @@ class MyMainWindow(QMainWindow):
         self.track_timelapse_canvas.update_plot()
     
     def keyPressEvent(self, event):
+        if event.key() == Qt.Key_BracketRight:
+            self.changeFrame(min(self.frame + 1, self.track_timelapse_canvas.max_frame))
+        elif event.key() == Qt.Key_BracketLeft:
+            self.changeFrame(max(self.frame - 1, 0))
+
         if self.main_canvas.currentIndex() != 1:
             event.ignore()
             return
-        if event.key() == Qt.Key_BracketRight:
-            self.frame = min(self.frame + 1, self.track_timelapse_canvas.max_frame) 
-        elif event.key() == Qt.Key_BracketLeft:
-            self.frame = max(self.frame - 1, 0)
+        
         elif event.key() == Qt.Key_C:
             self.style_index = (self.style_index + 1) % len(self.track_timelapse_canvas.label_styles)
+            self.track_timelapse_canvas.update_plot()
         elif event.key() == Qt.Key_L:
             self.label_index = (self.label_index + 1) % len(self.track_timelapse_canvas.labels)
+            self.track_timelapse_canvas.update_plot()
         else:
             event.ignore() 
             return  
-        self.track_timelapse_canvas.update_plot()
+        
+    def changeFrame(self, frame):
+        self.frame = frame
+        self.scrollbar.setValue(self.frame)
 
     def save_result(self):
         options = QFileDialog.Options()
