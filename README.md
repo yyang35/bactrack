@@ -72,9 +72,6 @@ Goes  [Bactrack Architecture Doc](doc/Architecture.md) for more details for Bact
   ```
 
 
-  ![Local Image](doc/images/gui.png "Local Image Example")
-
-
 - ### Run in Shell Command:
 
   ``` bash
