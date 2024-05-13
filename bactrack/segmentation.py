@@ -79,7 +79,8 @@ def step_factor(t):
     t: int
         time step
     """
-    return (1+t)
+    return 1.0
+    return np.sqrt((1+t)* 1.0)
 
 
 def step( pt, dP, shape):
