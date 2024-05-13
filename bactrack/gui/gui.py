@@ -121,8 +121,8 @@ class MyMainWindow(QMainWindow):
         
          # All constants
         self.solvers_mapping = {
-            "mip solver": "mip_solver",
             "scipy solver": "scipy_solver",
+            "mip solver": "mip_solver",
         }
 
         self.weights_mapping = {
