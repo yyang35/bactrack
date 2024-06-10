@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python>=3.8,<=3.11
+  - python==3.10.14
   - pytorch
   - torchvision
   - cellpose>=2.2.3
@@ -19,7 +19,14 @@ dependencies:
   - psutil
   - scipy
   - opencv
+  - cffi==1.15.0
+  - shapely
+  - descartes
+  - ipywidgets
+  - pyqt5
+  - pip
   - pip:
     - git+https://github.com/kevinjohncutler/omnipose.git
     - mip
-
+    - mpl_interactions
+    - pyqt6
