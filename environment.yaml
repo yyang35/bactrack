@@ -23,10 +23,10 @@ dependencies:
   - shapely
   - descartes
   - ipywidgets
-  - pyqt5
   - pip
   - pip:
     - git+https://github.com/kevinjohncutler/omnipose.git
     - mip
     - mpl_interactions
+    - pyqt5
     - pyqt6
